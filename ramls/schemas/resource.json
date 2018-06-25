@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "description": "An online resource",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "link": {
+      "type": "string",
+      "description": "Link to the online resource",
+      "example": "https://www.ncbi.nlm.nih.gov/pubmed/"
+    },
+    "title": {
+      "type": "string",
+      "description": "The title of the resource"
+    },
+    "description": {
+      "type": "string",
+      "description": "an introduction of the resource"
+    }
+  },
+  "required": [
+    "link",
+    "title"
+  ]
+}
