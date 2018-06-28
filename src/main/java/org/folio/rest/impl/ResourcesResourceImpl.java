@@ -20,6 +20,7 @@ import org.z3950.zing.cql.cql2pgjson.SchemaException;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -42,15 +43,25 @@ public class ResourcesResourceImpl implements ResourcesResource {
     private void initCQLValidation() {
         String path = RESOURCE_SCHEMA_NAME;
         try {
-            RESOURCE_SCHEMA = IOUtils.toString(getClass().getClassLoader().getResourceAsStream(path), "UTF-8");
+            InputStream is = getClass().getClassLoader().getResourceAsStream(path);
+            RESOURCE_SCHEMA = IOUtils.toString(is, "UTF-8");
         } catch (Exception e) {
-            LOGGER.error("Unable to load schema - " + path + ", validation of query fields will not be active");
+            LOGGER.error(
+                    "Unable to load schema - "
+                            + path
+                            + ", validation of query fields will not be active");
         }
     }
 
     @Override
-    public void getResources(String query, int offset, int limit, String lang, Map<String, String> okapiHeaders,
-                             Handler<AsyncResult<Response>> asyncResultHandler, Context vertxContext)
+    public void getResources(
+            String query,
+            int offset,
+            int limit,
+            String lang,
+            Map<String, String> okapiHeaders,
+            Handler<AsyncResult<Response>> asyncResultHandler,
+            Context vertxContext)
             throws Exception {
         PostgresClient postgresClient = getPostgresClient(okapiHeaders, vertxContext);
         CQLWrapper cql = null;
@@ -59,65 +70,109 @@ public class ResourcesResourceImpl implements ResourcesResource {
         } catch (Exception e) {
             asyncResultHandler.handle(Future.failedFuture(e));
         }
-        postgresClient.get(RESOURCE_TABLE, ResourceCollection.class, new String[]{"*"}, cql, true, false, reply -> {
-            LOGGER.info("REPLY: " + reply.toString());
-            if (reply.succeeded()) {
-                ResourceCollection resources = new ResourceCollection();
-                List<Resource> resourceList = (List<Resource>) reply.result().getResults();
-                resources.setResources(resourceList);
-                Integer total = reply.result().getResultInfo().getTotalRecords();
-                resources.setTotalRecords(total);
-                asyncResultHandler.handle(Future.succeededFuture(GetResourcesResponse.withJsonOK(resources)));
-            } else {
-                asyncResultHandler.handle(Future.failedFuture(reply.cause()));
-            }
-        });
+        String perms = okapiHeaders.get(RestVerticle.OKAPI_HEADER_PERMISSIONS);
+        if (perms == null || perms.isEmpty()) {
+            LOGGER.error(
+                    "No "
+                            + RestVerticle.OKAPI_HEADER_PERMISSIONS
+                            + " - check oriole.domain.* permissions");
+            asyncResultHandler.handle(
+                    Future.succeededFuture(
+                            GetResourcesResponse.withPlainUnauthorized(
+                                    "No oriole.domain.* permissions")));
+            return;
+        }
+        postgresClient.get(
+                RESOURCE_TABLE,
+                ResourceCollection.class,
+                new String[] {"*"},
+                cql,
+                true,
+                false,
+                reply -> {
+                    LOGGER.info("REPLY: " + reply.toString());
+                    if (reply.succeeded()) {
+                        ResourceCollection resources = new ResourceCollection();
+                        List<Resource> resourceList = (List<Resource>) reply.result().getResults();
+                        resources.setResources(resourceList);
+                        Integer total = reply.result().getResultInfo().getTotalRecords();
+                        resources.setTotalRecords(total);
+                        asyncResultHandler.handle(
+                                Future.succeededFuture(GetResourcesResponse.withJsonOK(resources)));
+                    } else {
+                        LOGGER.info("REPLY FAILED: " + reply.cause());
+                        asyncResultHandler.handle(Future.failedFuture(reply.cause()));
+                    }
+                });
     }
 
     @Override
-    public void postResources(String lang, Resource entity, Map<String, String> okapiHeaders,
-                              Handler<AsyncResult<Response>> asyncResultHandler, Context vertxContext)
+    public void postResources(
+            String lang,
+            Resource entity,
+            Map<String, String> okapiHeaders,
+            Handler<AsyncResult<Response>> asyncResultHandler,
+            Context vertxContext)
             throws Exception {
         String id = entity.getId();
         if (id == null || id.isEmpty()) {
             entity.setId(UUID.randomUUID().toString());
         }
         PostgresClient postgresClient = getPostgresClient(okapiHeaders, vertxContext);
-        vertxContext.runOnContext(v -> {
-            postgresClient.save(RESOURCE_TABLE, entity, reply -> {
-                if (reply.succeeded()) {
-                    Object ret = reply.result();
-                    entity.setId((String)ret);
-                    OutStream stream = new OutStream();
-                    stream.setData(entity);
-                    asyncResultHandler.handle(Future.succeededFuture(PostResourcesResponse.withJsonCreated(LOCATION_PREFIX + ret, stream)));
-                } else {
-                    asyncResultHandler.handle(Future.failedFuture(reply.cause()));
-                }
-            });
-        });
+        vertxContext.runOnContext(
+                v ->
+                        postgresClient.save(
+                                RESOURCE_TABLE,
+                                entity,
+                                reply -> {
+                                    if (reply.succeeded()) {
+                                        Object ret = reply.result();
+                                        entity.setId((String) ret);
+                                        OutStream stream = new OutStream();
+                                        stream.setData(entity);
+                                        asyncResultHandler.handle(
+                                                Future.succeededFuture(
+                                                        PostResourcesResponse.withJsonCreated(
+                                                                LOCATION_PREFIX + ret, stream)));
+                                    } else {
+                                        asyncResultHandler.handle(
+                                                Future.failedFuture(reply.cause()));
+                                    }
+                                }));
     }
 
     @Override
-    public void getResourcesByResourceId(String resourceId, String lang, Map<String, String> okapiHeaders,
-                                         Handler<AsyncResult<Response>> asyncResultHandler, Context vertxContext)
-            throws Exception {
-
-    }
-
-    @Override
-    public void deleteResourcesByResourceId(String resourceId, String lang, Map<String, String> okapiHeaders, Handler
-            <AsyncResult<Response>> asyncResultHandler, Context vertxContext) throws Exception {
-
-    }
+    public void getResourcesByResourceId(
+            String resourceId,
+            String lang,
+            Map<String, String> okapiHeaders,
+            Handler<AsyncResult<Response>> asyncResultHandler,
+            Context vertxContext)
+            throws Exception {}
 
     @Override
-    public void putResourcesByResourceId(String resourceId, String lang, Resource entity, Map<String, String> okapiHeaders, Handler<AsyncResult<Response>> asyncResultHandler, Context vertxContext) throws Exception {
+    public void deleteResourcesByResourceId(
+            String resourceId,
+            String lang,
+            Map<String, String> okapiHeaders,
+            Handler<AsyncResult<Response>> asyncResultHandler,
+            Context vertxContext)
+            throws Exception {}
 
-    }
+    @Override
+    public void putResourcesByResourceId(
+            String resourceId,
+            String lang,
+            Resource entity,
+            Map<String, String> okapiHeaders,
+            Handler<AsyncResult<Response>> asyncResultHandler,
+            Context vertxContext)
+            throws Exception {}
 
-    private static PostgresClient getPostgresClient(Map<String, String> okapiHeaders, Context vertxContext) {
-        String tenantId = TenantTool.calculateTenantId(okapiHeaders.get(RestVerticle.OKAPI_HEADER_TENANT));
+    private static PostgresClient getPostgresClient(
+            Map<String, String> okapiHeaders, Context vertxContext) {
+        String tenantId =
+                TenantTool.calculateTenantId(okapiHeaders.get(RestVerticle.OKAPI_HEADER_TENANT));
         return PostgresClient.getInstance(vertxContext.owner(), tenantId);
     }
 
@@ -129,7 +184,8 @@ public class ResourcesResourceImpl implements ResourcesResource {
         } else {
             cql2pgJson = new CQL2PgJSON(RESOURCE_TABLE + ".jsonb");
         }
-        return new CQLWrapper(cql2pgJson, query).setLimit(new Limit(limit)).setOffset(new Offset(offset));
+        return new CQLWrapper(cql2pgJson, query)
+                .setLimit(new Limit(limit))
+                .setOffset(new Offset(offset));
     }
-
 }
