@@ -9,14 +9,21 @@
   <version>1.0-SNAPSHOT</version>
 
   <name>mod-oriole</name>
-  <!-- FIXME change it to the project's website -->
-  <url>http://www.example.com</url>
+  <url>https://github.com/jhu-sheridan-libraries/mod-oriole</url>
+
+  <licenses>
+    <license>
+      <name>Apache License 2.0</name>
+      <url>http://spdx.org/licenses/Apache-2.0</url>
+    </license>
+  </licenses>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <ramlfiles_path>${basedir}/ramls</ramlfiles_path>
+    <vertx-version>3.5.1</vertx-version>
   </properties>
 
   <repositories>
@@ -27,17 +34,40 @@
     </repository>
   </repositories>
 
+  <scm>
+    <url>https://github.com/jhu-sheridan-libraries/mod-oriole</url>
+    <connection>scm:git:git://github.com/jhu-sheridan-libraries/mod-oriole</connection>
+    <developerConnection>scm:git:git@github.com:jhu-sheridan-libraries/mod-oriole.git</developerConnection>
+    <tag>HEAD</tag>
+  </scm>
+
   <dependencies>
     <dependency>
       <groupId>org.folio</groupId>
       <artifactId>domain-models-runtime</artifactId>
-      <version>19.0.0</version>
+      <version>19.1.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.folio.okapi</groupId>
+      <artifactId>okapi-common</artifactId>
+      <version>2.14.1</version>
+      <type>jar</type>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-core</artifactId>
+      <version>${vertx-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-web</artifactId>
+      <version>${vertx-version}</version>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-unit</artifactId>
       <scope>test</scope>
-      <version>3.4.1</version>
+      <version>${vertx-version}</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -65,7 +95,6 @@
       <scope>test</scope>
       <type>jar</type>
     </dependency>
-
   </dependencies>
 
   <build>
@@ -90,34 +119,34 @@
           <!--<artifactId>maven-compiler-plugin</artifactId>-->
           <!--<version>3.7.0</version>-->
         <!--</plugin>-->
-        <plugin>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.20.1</version>
-          <configuration>
-            <systemProperties>
-              <property>
-                <name>http.port</name>
-                <value>8887</value>
-              </property>
-              <!--
-              <property>
-                <name>postgres_secretkey_4_embeddedmode</name>
-                <value>b2+S+X4F/NFys/0jMaEG1A</value>
-              </property>
-              -->
-            </systemProperties>
-            <environmentVariables>
-              <DB_HOST>localhost</DB_HOST>
-              <DB_PORT>6000</DB_PORT>
-              <DB_DATABASE>postgres</DB_DATABASE>
-              <DB_USERNAME>username</DB_USERNAME>
-              <DB_PASSWORD>GanU/uZmfJOaxn6PaUjDeQ==</DB_PASSWORD>
-              <DB_CHARSET>UTF8</DB_CHARSET>
-              <DB_QUERYTIMEOUT>10000</DB_QUERYTIMEOUT>
-              <DB_MAXPOOLSIZE>26</DB_MAXPOOLSIZE>
-            </environmentVariables>
-          </configuration>
-        </plugin>
+        <!--<plugin>-->
+          <!--<artifactId>maven-surefire-plugin</artifactId>-->
+          <!--<version>2.20.1</version>-->
+          <!--<configuration>-->
+            <!--<systemProperties>-->
+              <!--<property>-->
+                <!--<name>http.port</name>-->
+                <!--<value>8887</value>-->
+              <!--</property>-->
+              <!--&lt;!&ndash;-->
+              <!--<property>-->
+                <!--<name>postgres_secretkey_4_embeddedmode</name>-->
+                <!--<value>b2+S+X4F/NFys/0jMaEG1A</value>-->
+              <!--</property>-->
+              <!--&ndash;&gt;-->
+            <!--</systemProperties>-->
+            <!--&lt;!&ndash;<environmentVariables>&ndash;&gt;-->
+              <!--&lt;!&ndash;<DB_HOST>localhost</DB_HOST>&ndash;&gt;-->
+              <!--&lt;!&ndash;<DB_PORT>6000</DB_PORT>&ndash;&gt;-->
+              <!--&lt;!&ndash;<DB_DATABASE>postgres</DB_DATABASE>&ndash;&gt;-->
+              <!--&lt;!&ndash;<DB_USERNAME>username</DB_USERNAME>&ndash;&gt;-->
+              <!--&lt;!&ndash;<DB_PASSWORD>GanU/uZmfJOaxn6PaUjDeQ==</DB_PASSWORD>&ndash;&gt;-->
+              <!--&lt;!&ndash;<DB_CHARSET>UTF8</DB_CHARSET>&ndash;&gt;-->
+              <!--&lt;!&ndash;<DB_QUERYTIMEOUT>10000</DB_QUERYTIMEOUT>&ndash;&gt;-->
+              <!--&lt;!&ndash;<DB_MAXPOOLSIZE>26</DB_MAXPOOLSIZE>&ndash;&gt;-->
+            <!--&lt;!&ndash;</environmentVariables>&ndash;&gt;-->
+          <!--</configuration>-->
+        <!--</plugin>-->
         <!--<plugin>-->
           <!--<artifactId>maven-jar-plugin</artifactId>-->
           <!--<version>3.0.2</version>-->
@@ -130,16 +159,16 @@
           <!--<artifactId>maven-deploy-plugin</artifactId>-->
           <!--<version>2.8.2</version>-->
         <!--</plugin>-->
-        <!--<plugin>-->
-          <!--<groupId>org.apache.maven.plugins</groupId>-->
-          <!--<artifactId>maven-compiler-plugin</artifactId>-->
-          <!--<version>3.1</version>-->
-          <!--<configuration>-->
-            <!--<source>1.8</source>-->
-            <!--<target>1.8</target>-->
-            <!--<encoding>UTF-8</encoding>-->
-          <!--</configuration>-->
-        <!--</plugin>-->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.1</version>
+          <configuration>
+            <source>1.8</source>
+            <target>1.8</target>
+            <encoding>UTF-8</encoding>
+          </configuration>
+        </plugin>
 
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
