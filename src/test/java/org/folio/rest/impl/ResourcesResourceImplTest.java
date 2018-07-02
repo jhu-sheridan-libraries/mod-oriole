@@ -207,17 +207,6 @@ public class ResourcesResourceImplTest {
                 .statusCode(400)
                 .body(containsString("Json content error"));
 
-        // initialize tenant first
-        String tenants = "{\"module_to\":\"" + moduleId + "\"}";
-        LOGGER.info("About to call the tenant interface " + tenants);
-        given().header(TENANT_HEADER)
-                .header(JSON)
-                .body(tenants)
-                .post("/_/tenant")
-                .then()
-                .log()
-                .ifValidationFails()
-                .statusCode(201);
         String bad3 = resource.replaceFirst("link", "creatorUsername");
         given().header(TENANT_HEADER)
                 .header(JSON)
