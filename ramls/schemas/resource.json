@@ -19,6 +19,12 @@
     "description": {
       "type": "string",
       "description": "an introduction of the resource"
+    },
+    "creatorUsername": {
+      "type": "string",
+      "description": "username of the user who created the record",
+      "example": "johndoe17",
+      "readonly": true
     }
   },
   "required": [
