@@ -11,11 +11,13 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.folio.rest.RestVerticle;
 import org.folio.rest.client.TenantClient;
 import org.folio.rest.persist.PostgresClient;
+import org.folio.rest.persist.cql.CQLWrapper;
 import org.folio.rest.tools.PomReader;
 import org.folio.rest.tools.client.test.HttpClientMock2;
 import org.folio.rest.tools.utils.NetworkUtils;
 import org.junit.*;
 import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +26,7 @@ import java.util.Locale;
 
 import static com.jayway.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 
 @RunWith(VertxUnitRunner.class)
 public class ResourcesResourceImplTest {
@@ -44,8 +47,8 @@ public class ResourcesResourceImplTest {
     private final Header ALL_PERM = new Header("X-Okapi-Permissions", "oriole.domain.all");
     private final Header JSON = new Header("Content-Type", "application/json");
 
-    @BeforeClass
-    public static void setUpBeforeClass(TestContext context) {
+    @Before
+    public void setUp(TestContext context) {
         Locale.setDefault(Locale.US);
         vertx = Vertx.vertx();
         moduleName = PomReader.INSTANCE.getModuleName().replaceAll("_", "-");
@@ -73,9 +76,8 @@ public class ResourcesResourceImplTest {
         LOGGER.info("resouresTest: setup done. Using port " + port);
     }
 
-    @AfterClass
-    public static void tearDownAfterClass(TestContext context) {
-        LOGGER.info("Cleaning up after ModuleTest");
+    @After
+    public void tearDown(TestContext context) {
         async = context.async();
         vertx.close(
                 context.asyncAssertSuccess(
@@ -127,5 +129,108 @@ public class ResourcesResourceImplTest {
                 .ifValidationFails()
                 .statusCode(500);
     }
+
+    @Test
+    public void testInitializeDatabase() {
+        String tenants = "{\"module_to\":\"" + moduleId + "\"}";
+        LOGGER.info("About to call the tenant interface " + tenants);
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(tenants)
+                .post("/_/tenant")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(201);
+    }
+
+    @Test
+    public void testEmptyList() {
+        // initialize tenant first
+        String tenants = "{\"module_to\":\"" + moduleId + "\"}";
+        LOGGER.info("About to call the tenant interface " + tenants);
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(tenants)
+                .post("/_/tenant")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(201);
+
+        // this should retrieve a blank list
+        given().header(TENANT_HEADER)
+                .header(ALL_PERM)
+                .get("/resources")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(200)
+                .body(containsString("\"resources\" : [ ]"));
+    }
+
+    @Test
+    public void testPostMalformedResources() {
+        String bad1 = "This is not json";
+        given().header(TENANT_HEADER) // no content-type header
+                .body(bad1)
+                .post("/resources")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(400)
+                .body(containsString("Content-type"));
+
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(bad1)
+                .post("/resources")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(400)
+                .body(containsString("Json content error"));
+
+        String resource = "{"
+                + "\"id\" : \"11111111-1111-1111-a111-111111111111\"," + LS
+                + "\"title\" : \"PubMed\"," + LS
+                + "\"link\" : \"https://www.ncbi.nlm.nih.gov/pubmed/\"," + LS
+                + "\"description\" : \"PubMed is a free search engine accessing primarily the MEDLINE database of references and abstracts on life sciences and biomedical topics.\"}" + LS;
+        String bad2 = resource.replaceFirst("}", ")"); // make it invalid json
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(bad2)
+                .post("/resources")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(400)
+                .body(containsString("Json content error"));
+
+        // initialize tenant first
+        String tenants = "{\"module_to\":\"" + moduleId + "\"}";
+        LOGGER.info("About to call the tenant interface " + tenants);
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(tenants)
+                .post("/_/tenant")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(201);
+        String bad3 = resource.replaceFirst("link", "creatorUsername");
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(bad3)
+                .post("/resources")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(422)
+                // English error message for Locale.US, see @Before
+                .body("errors[0].message", is("may not be null"))
+                .body("errors[0].parameters[0].key", is("link"));
+
+    }
+
 }
 
