@@ -27,7 +27,7 @@ import java.util.UUID;
 
 public class ResourcesResourceImpl implements ResourcesResource {
     private static final Logger LOGGER = LoggerFactory.getLogger(ResourcesResourceImpl.class);
-    public static final String RESOURCE_TABLE = "resource_data";
+    public static final String RESOURCE_TABLE = "oriole_data";
     private static final String ID_FIELD_NAME = "id";
     private static final String RESOURCE_SCHEMA_NAME = "ramls/resource.json";
     private static final String LOCATION_PREFIX = "/resources/";

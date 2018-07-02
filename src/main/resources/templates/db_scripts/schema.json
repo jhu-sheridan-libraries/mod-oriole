@@ -1,0 +1,19 @@
+{
+  "tables": [
+    {
+      "tableName": "oriole_data",
+      "fromModuleVersion": 0.2,
+      "withMetadata": true,
+      "generateId": true,
+      "populateJsonWithId": true,
+      "ginIndex": [
+        {
+          "fieldName": "title",
+          "tOps": "ADD",
+          "caseSensitive": false,
+          "removeAccents": true
+        }
+      ]
+    }
+  ]
+}
