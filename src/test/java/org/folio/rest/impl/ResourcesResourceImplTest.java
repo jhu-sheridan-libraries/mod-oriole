@@ -43,7 +43,6 @@ public class ResourcesResourceImplTest {
     private static final String HOST = "localhost";
 
     private final Header TENANT_HEADER = new Header("X-Okapi-Tenant", TENANT);
-    private final Header ALL_PERM = new Header("X-Okapi-Permissions", "oriole.domain.all");
     private final Header JSON = new Header("Content-Type", "application/json");
 
     private final Header USER9 = new Header("X-Okapi-User-Id",
@@ -120,24 +119,11 @@ public class ResourcesResourceImplTest {
     }
 
     @Test
-    public void testGetWitoutPermissions() {
-        // Simple GET without oriole.domain.* permissions
-        given().header(TENANT_HEADER)
-                .get("/resources")
-                .then()
-                .log()
-                .ifValidationFails()
-                .statusCode(401)
-                .body(containsString("oriole.domain"));
-    }
-
-    @Test
     public void testWithTenantBeforeInvoked() {
         // Simple GET request with a tenant, but before
         // we have invoked the tenant interface, so the
         // call will fail (with lots of traces in the log)
         given().header(TENANT_HEADER)
-                .header(ALL_PERM)
                 .get("/resources")
                 .then()
                 .log()
@@ -174,7 +160,6 @@ public class ResourcesResourceImplTest {
 
         // this should retrieve a blank list
         given().header(TENANT_HEADER)
-                .header(ALL_PERM)
                 .get("/resources")
                 .then()
                 .log()
@@ -254,7 +239,6 @@ public class ResourcesResourceImplTest {
         given().header(TENANT_HEADER)
                 //.header(USER9)
                 .header(JSON)
-                .header(ALL_PERM)
                 .body(bad4)
                 .post("/resources")
                 .then()
@@ -277,24 +261,26 @@ public class ResourcesResourceImplTest {
                 .ifValidationFails()
                 .statusCode(201);
         // Post
-        given().header(TENANT_HEADER).
-                header(JSON).header(ALL_PERM)
+        given().header(TENANT_HEADER)
+                .header(JSON)
                 .body(resource)
                 .post("/resources")
                 .then()
-                .log().ifValidationFails()
+                .log()
+                .ifValidationFails()
                 .statusCode(201);
 
         // Fetch the posted resource
         given().header(TENANT_HEADER)
-                .header(ALL_PERM)
                 .get("/resources")
                 .then()
-                .log().ifValidationFails()
+                .log()
+                .ifValidationFails()
                 .statusCode(200)
                 .body(containsString("PubMed"))
                 .body(containsString("\"totalRecords\" : 1"));
-
     }
+
+
 }
 

@@ -69,14 +69,6 @@ public class ResourcesResourceImpl implements ResourcesResource {
         } catch (Exception e) {
             asyncResultHandler.handle(Future.failedFuture(e));
         }
-        String perms = okapiHeaders.get(RestVerticle.OKAPI_HEADER_PERMISSIONS);
-        if (perms == null || perms.isEmpty()) {
-            LOGGER.error("No " + RestVerticle.OKAPI_HEADER_PERMISSIONS
-                    + " - check oriole.domain.* permissions");
-            asyncResultHandler.handle(Future.succeededFuture(
-                    GetResourcesResponse.withPlainUnauthorized("No oriole.domain.* permissions")));
-            return;
-        }
         postgresClient.get(RESOURCE_TABLE, ResourceCollection.class, new String[] {"*"}, cql, true, false,
                 reply -> {
             LOGGER.info("REPLY: " + reply.toString());
