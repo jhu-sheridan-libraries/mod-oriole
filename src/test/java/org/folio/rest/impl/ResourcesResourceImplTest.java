@@ -9,15 +9,14 @@ import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.folio.rest.RestVerticle;
-import org.folio.rest.client.TenantClient;
 import org.folio.rest.persist.PostgresClient;
-import org.folio.rest.persist.cql.CQLWrapper;
 import org.folio.rest.tools.PomReader;
 import org.folio.rest.tools.client.test.HttpClientMock2;
 import org.folio.rest.tools.utils.NetworkUtils;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +45,22 @@ public class ResourcesResourceImplTest {
     private final Header TENANT_HEADER = new Header("X-Okapi-Tenant", TENANT);
     private final Header ALL_PERM = new Header("X-Okapi-Permissions", "oriole.domain.all");
     private final Header JSON = new Header("Content-Type", "application/json");
+
+    private final Header USER9 = new Header("X-Okapi-User-Id",
+            "99999999-9999-4999-9999-999999999999");
+    private final Header USER19 = new Header("X-Okapi-User-Id",
+            "11999999-9999-4999-9999-999999999911");  // One that is not found in the mock data
+    private final Header USER8 = new Header("X-Okapi-User-Id",
+            "88888888-8888-4888-8888-888888888888");
+    private final Header USER7 = new Header("X-Okapi-User-Id",
+            "77777777-7777-4777-a777-777777777777");
+
+    private final String resource = "{"
+            + "\"id\" : \"11111111-1111-1111-a111-111111111111\"," + LS
+                + "\"title\" : \"PubMed\"," + LS
+                + "\"link\" : \"https://www.ncbi.nlm.nih.gov/pubmed/\"," + LS
+                + "\"description\" : \"PubMed is a free search engine accessing primarily the MEDLINE database of references and abstracts on life sciences and biomedical topics.\"}" + LS;
+
 
     @Before
     public void setUp(TestContext context) {
@@ -148,7 +163,6 @@ public class ResourcesResourceImplTest {
     public void testEmptyList() {
         // initialize tenant first
         String tenants = "{\"module_to\":\"" + moduleId + "\"}";
-        LOGGER.info("About to call the tenant interface " + tenants);
         given().header(TENANT_HEADER)
                 .header(JSON)
                 .body(tenants)
@@ -191,11 +205,6 @@ public class ResourcesResourceImplTest {
                 .statusCode(400)
                 .body(containsString("Json content error"));
 
-        String resource = "{"
-                + "\"id\" : \"11111111-1111-1111-a111-111111111111\"," + LS
-                + "\"title\" : \"PubMed\"," + LS
-                + "\"link\" : \"https://www.ncbi.nlm.nih.gov/pubmed/\"," + LS
-                + "\"description\" : \"PubMed is a free search engine accessing primarily the MEDLINE database of references and abstracts on life sciences and biomedical topics.\"}" + LS;
         String bad2 = resource.replaceFirst("}", ")"); // make it invalid json
         given().header(TENANT_HEADER)
                 .header(JSON)
@@ -219,7 +228,73 @@ public class ResourcesResourceImplTest {
                 .body("errors[0].message", is("may not be null"))
                 .body("errors[0].parameters[0].key", is("link"));
 
+        String badfieldDoc = resource.replaceFirst("link", "UnknownFieldName");
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(badfieldDoc)
+                .post("/resources")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(422)
+                .body(containsString("Unrecognized field"));
     }
 
+    @Test
+    public void testInvalidUUID() {
+        String tenants = "{\"module_to\":\"" + moduleId + "\"}";
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(tenants)
+                .post("/_/tenant")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(201);
+        String bad4 = resource.replaceAll("-1111-", "-2-");
+        given().header(TENANT_HEADER)
+                //.header(USER9)
+                .header(JSON)
+                .header(ALL_PERM)
+                .body(bad4)
+                .post("/resources")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(422)
+                .body(containsString("invalid input syntax for type uuid"));
+
+    }
+
+    @Test
+    public void testPostAndFetch(TestContext context) {
+        // initialize tenant
+        String tenants = "{\"module_to\":\"" + moduleId + "\"}";
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(tenants)
+                .post("/_/tenant")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(201);
+        // Post
+        given().header(TENANT_HEADER).
+                header(JSON).header(ALL_PERM)
+                .body(resource)
+                .post("/resources")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(201);
+
+        // Fetch the posted resource
+        given().header(TENANT_HEADER)
+                .header(ALL_PERM)
+                .get("/resources")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(200)
+                .body(containsString("PubMed"))
+                .body(containsString("\"totalRecords\" : 1"));
+
+    }
 }
 
