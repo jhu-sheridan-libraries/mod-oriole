@@ -281,6 +281,48 @@ public class ResourcesResourceImplTest {
                 .body(containsString("\"totalRecords\" : 1"));
     }
 
+    @Test
+    public void testFetchById() {
+        // initialize tenant
+        String tenants = "{\"module_to\":\"" + moduleId + "\"}";
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(tenants)
+                .post("/_/tenant")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(201);
+        // Post
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(resource)
+                .post("/resources")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(201);
 
+        given().header(TENANT_HEADER)
+                .get("/resources/11111111-1111-1111-a111-111111111111")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(200)
+                .body(containsString("PubMed"));
+
+        given().header(TENANT_HEADER)
+                .get("/resources/99111111-1111-1111-a111-111111111199")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(404)
+                .body(containsString("not found"));
+
+        given().header(TENANT_HEADER)
+                .get("/resources/777")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(400);
+
+    }
 }
 

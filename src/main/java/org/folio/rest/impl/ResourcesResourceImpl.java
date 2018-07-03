@@ -6,10 +6,15 @@ import org.folio.rest.RestVerticle;
 import org.folio.rest.jaxrs.model.Resource;
 import org.folio.rest.jaxrs.model.ResourceCollection;
 import org.folio.rest.jaxrs.resource.ResourcesResource;
+import org.folio.rest.persist.Criteria.Criteria;
+import org.folio.rest.persist.Criteria.Criterion;
 import org.folio.rest.persist.Criteria.Limit;
 import org.folio.rest.persist.Criteria.Offset;
+import org.folio.rest.persist.PgExceptionUtil;
 import org.folio.rest.persist.PostgresClient;
 import org.folio.rest.persist.cql.CQLWrapper;
+import org.folio.rest.tools.messages.MessageConsts;
+import org.folio.rest.tools.messages.Messages;
 import org.folio.rest.tools.utils.OutStream;
 import org.folio.rest.tools.utils.TenantTool;
 import org.folio.rest.tools.utils.ValidationHelper;
@@ -33,6 +38,7 @@ public class ResourcesResourceImpl implements ResourcesResource {
     private static final String RESOURCE_SCHEMA_NAME = "ramls/schemas/resource.json";
     private static final String LOCATION_PREFIX = "/resources/";
     private String RESOURCE_SCHEMA = null;
+    private final Messages messages = Messages.getInstance();
 
     public ResourcesResourceImpl(Vertx vertx, String tennantId) {
         if (RESOURCE_SCHEMA == null) {
@@ -121,7 +127,39 @@ public class ResourcesResourceImpl implements ResourcesResource {
             Map<String, String> okapiHeaders,
             Handler<AsyncResult<Response>> asyncResultHandler,
             Context vertxContext)
-            throws Exception {}
+            throws Exception {
+        if (resourceId.equals("_self")) {
+            return;
+        }
+        Criterion c = new Criterion(
+                new Criteria().addField(ID_FIELD_NAME).setJSONB(false).setOperation("=").setValue("'"+resourceId+"'"));
+        getPostgresClient(okapiHeaders, vertxContext).get(RESOURCE_TABLE, Resource.class, c, true,
+                reply -> {
+            if (reply.succeeded()) {
+                List<Resource> resources = (List<Resource>)reply.result().getResults();
+                if (resources.isEmpty()) {
+                    asyncResultHandler.handle(Future.succeededFuture(
+                            GetResourcesByResourceIdResponse.withPlainNotFound(
+                                    "Resource " + resourceId + " not found")));
+                } else {
+                    Resource r = resources.get(0);
+                    asyncResultHandler.handle(
+                            Future.succeededFuture(GetResourcesByResourceIdResponse.withJsonOK(r)));
+                }
+            } else {
+                String error = PgExceptionUtil.badRequestMessage(reply.cause());
+                if (error == null) {
+                    asyncResultHandler.handle(Future.succeededFuture(
+                            GetResourcesByResourceIdResponse.withPlainInternalServerError(messages.getMessage(lang,
+                                    MessageConsts.InternalServerError))));
+                } else {
+                    asyncResultHandler.handle(Future.succeededFuture(
+                            GetResourcesByResourceIdResponse.withPlainBadRequest(reply.cause().getMessage())));
+
+                }
+            }
+        });
+    }
 
     @Override
     public void deleteResourcesByResourceId(
