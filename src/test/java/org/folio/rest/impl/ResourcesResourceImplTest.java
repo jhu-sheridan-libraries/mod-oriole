@@ -375,5 +375,74 @@ public class ResourcesResourceImplTest {
                 .log().ifValidationFails()
                 .statusCode(404);
     }
+
+    @Test
+    public void testUpdate(TestContext context) {
+        // initialize tenant
+        String tenants = "{\"module_to\":\"" + moduleId + "\"}";
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(tenants)
+                .post("/_/tenant")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(201);
+        // Post
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(resource)
+                .post("/resources")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(201);
+
+        // Update a resource
+        //  no Creator fields, RMB should keep them, once we mark them as read-only
+        final String updated1 = "{"
+                + "\"id\" : \"11111111-1111-1111-a111-111111111111\"," + LS
+                + "\"title\" : \"PubMed\"," + LS
+                + "\"link\" : \"https://www.ncbi.nlm.nih.gov/pubmed/\"," + LS
+                + "\"description\" : \"PubMed lists journal articles and more back to 1947.\"}" + LS;
+
+        // ID doesn't match
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(updated1)
+                .put("/resources/22222222-2222-2222-a222-222222222222") // wrong one
+                .then()
+                .log().ifValidationFails()
+                .statusCode(422)
+                .body(containsString("Can not change Id"));
+
+        // Invalid UUID
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(updated1)
+                .put("/resources/11111111-222-1111-2-111111111111")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(422);
+
+        // ID not found
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(updated1.replaceAll("1", "3"))
+                .put("/resources/33333333-3333-3333-a333-333333333333")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(404)
+                .body(containsString("not found"));
+
+        // This one should work
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(updated1)
+                .put("/resources/11111111-1111-1111-a111-111111111111")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(204);
+    }
 }
 
