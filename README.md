@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/jhu-sheridan-libraries/mod-oriole.svg?branch=master)](https://travis-ci.org/jhu-sheridan-libraries/mod-oriole)
+
 ## Getting Started
 
 ### Clone from GitHub
