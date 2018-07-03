@@ -39,20 +39,8 @@ public class ResourcesResourceImplTest {
 
     private static int port;
     private static final String TENANT = "test";
-    private static final String TOKEN = "test";
-    private static final String HOST = "localhost";
-
     private final Header TENANT_HEADER = new Header("X-Okapi-Tenant", TENANT);
     private final Header JSON = new Header("Content-Type", "application/json");
-
-    private final Header USER9 = new Header("X-Okapi-User-Id",
-            "99999999-9999-4999-9999-999999999999");
-    private final Header USER19 = new Header("X-Okapi-User-Id",
-            "11999999-9999-4999-9999-999999999911");  // One that is not found in the mock data
-    private final Header USER8 = new Header("X-Okapi-User-Id",
-            "88888888-8888-4888-8888-888888888888");
-    private final Header USER7 = new Header("X-Okapi-User-Id",
-            "77777777-7777-4777-a777-777777777777");
 
     private final String resource = "{"
             + "\"id\" : \"11111111-1111-1111-a111-111111111111\"," + LS
