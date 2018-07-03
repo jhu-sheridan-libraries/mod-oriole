@@ -169,8 +169,47 @@ public class ResourcesResourceImpl implements ResourcesResource {
             Handler<AsyncResult<Response>> asyncResultHandler,
             Context vertxContext)
             throws Exception {
-
-
+        getOneResource(resourceId, okapiHeaders, vertxContext, res -> {
+            if (res.succeeded()) {
+                getPostgresClient(okapiHeaders, vertxContext).delete(RESOURCE_TABLE, resourceId,
+                        reply -> {
+                    if (reply.succeeded()) {
+                        if (reply.result().getUpdated() == 1) {
+                            asyncResultHandler.handle(Future.succeededFuture(
+                                    DeleteResourcesByResourceIdResponse.withNoContent()));
+                        } else {
+                            LOGGER.error(messages.getMessage(lang, MessageConsts.DeletedCountError,
+                                    1, reply.result().getUpdated()));
+                            asyncResultHandler.handle(Future.succeededFuture(DeleteResourcesByResourceIdResponse
+                                    .withPlainNotFound(messages.getMessage(lang, MessageConsts.DeletedCountError,
+                                            1, reply.result().getUpdated()))));
+                        }
+                    } else {
+                        ValidationHelper.handleError(reply.cause(), asyncResultHandler);
+                    }
+                });
+            } else {
+                switch (res.getType()) {
+                    // ValidationHelper can not handle these error types
+                    case NOT_FOUND:
+                        asyncResultHandler.handle(Future.succeededFuture(DeleteResourcesByResourceIdResponse
+                                .withPlainNotFound(res.cause().getMessage())));
+                        break;
+                    case USER: // bad request
+                        asyncResultHandler.handle(Future.succeededFuture(DeleteResourcesByResourceIdResponse
+                                .withPlainBadRequest(res.cause().getMessage())));
+                        break;
+                    case FORBIDDEN:
+                        asyncResultHandler.handle(Future.succeededFuture(DeleteResourcesByResourceIdResponse
+                                .withPlainUnauthorized(res.cause().getMessage())));
+                        break;
+                    default: // typically INTERNAL
+                        String msg = res.cause().getMessage();
+                        ValidationHelper.handleError(res.cause(), asyncResultHandler);
+                        break;
+                }
+            }
+        });
     }
 
     @Override

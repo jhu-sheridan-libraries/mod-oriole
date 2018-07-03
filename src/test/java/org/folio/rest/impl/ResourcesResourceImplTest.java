@@ -324,5 +324,56 @@ public class ResourcesResourceImplTest {
                 .statusCode(400);
 
     }
+
+    @Test
+    public void testDelete(TestContext context) {
+        // initialize tenant
+        String tenants = "{\"module_to\":\"" + moduleId + "\"}";
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(tenants)
+                .post("/_/tenant")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(201);
+        // Post
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(resource)
+                .post("/resources")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(201);
+
+        // A failed delete with bad UUID
+        given().header(TENANT_HEADER)
+                .delete("/resources/11111111-3-1111-333-111111111111")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(400);
+
+        // not found
+        given().header(TENANT_HEADER)
+                .delete("/resources/11111111-2222-3333-a444-555555555555")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(404);
+
+        // delete it
+        given().header(TENANT_HEADER)
+                .delete("/resources/11111111-1111-1111-a111-111111111111")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(204);
+
+        // No longer there
+        given().header(TENANT_HEADER)
+                .delete("/resources/11111111-1111-1111-a111-111111111111")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(404);
+    }
 }
 
