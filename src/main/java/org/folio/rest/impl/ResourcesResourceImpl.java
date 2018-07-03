@@ -12,6 +12,7 @@ import org.folio.rest.persist.PostgresClient;
 import org.folio.rest.persist.cql.CQLWrapper;
 import org.folio.rest.tools.utils.OutStream;
 import org.folio.rest.tools.utils.TenantTool;
+import org.folio.rest.tools.utils.ValidationHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.z3950.zing.cql.cql2pgjson.CQL2PgJSON;
@@ -29,7 +30,7 @@ public class ResourcesResourceImpl implements ResourcesResource {
     private static final Logger LOGGER = LoggerFactory.getLogger(ResourcesResourceImpl.class);
     public static final String RESOURCE_TABLE = "oriole_data";
     private static final String ID_FIELD_NAME = "id";
-    private static final String RESOURCE_SCHEMA_NAME = "ramls/resource.json";
+    private static final String RESOURCE_SCHEMA_NAME = "ramls/schemas/resource.json";
     private static final String LOCATION_PREFIX = "/resources/";
     private String RESOURCE_SCHEMA = null;
 
@@ -46,10 +47,8 @@ public class ResourcesResourceImpl implements ResourcesResource {
             InputStream is = getClass().getClassLoader().getResourceAsStream(path);
             RESOURCE_SCHEMA = IOUtils.toString(is, "UTF-8");
         } catch (Exception e) {
-            LOGGER.error(
-                    "Unable to load schema - "
-                            + path
-                            + ", validation of query fields will not be active");
+            LOGGER.error("Unable to load schema - " + path
+                    + ", validation of query fields will not be active");
         }
     }
 
@@ -72,38 +71,27 @@ public class ResourcesResourceImpl implements ResourcesResource {
         }
         String perms = okapiHeaders.get(RestVerticle.OKAPI_HEADER_PERMISSIONS);
         if (perms == null || perms.isEmpty()) {
-            LOGGER.error(
-                    "No "
-                            + RestVerticle.OKAPI_HEADER_PERMISSIONS
-                            + " - check oriole.domain.* permissions");
-            asyncResultHandler.handle(
-                    Future.succeededFuture(
-                            GetResourcesResponse.withPlainUnauthorized(
-                                    "No oriole.domain.* permissions")));
+            LOGGER.error("No " + RestVerticle.OKAPI_HEADER_PERMISSIONS
+                    + " - check oriole.domain.* permissions");
+            asyncResultHandler.handle(Future.succeededFuture(
+                    GetResourcesResponse.withPlainUnauthorized("No oriole.domain.* permissions")));
             return;
         }
-        postgresClient.get(
-                RESOURCE_TABLE,
-                ResourceCollection.class,
-                new String[] {"*"},
-                cql,
-                true,
-                false,
+        postgresClient.get(RESOURCE_TABLE, ResourceCollection.class, new String[] {"*"}, cql, true, false,
                 reply -> {
-                    LOGGER.info("REPLY: " + reply.toString());
-                    if (reply.succeeded()) {
-                        ResourceCollection resources = new ResourceCollection();
-                        List<Resource> resourceList = (List<Resource>) reply.result().getResults();
-                        resources.setResources(resourceList);
-                        Integer total = reply.result().getResultInfo().getTotalRecords();
-                        resources.setTotalRecords(total);
-                        asyncResultHandler.handle(
-                                Future.succeededFuture(GetResourcesResponse.withJsonOK(resources)));
-                    } else {
-                        LOGGER.info("REPLY FAILED: " + reply.cause());
-                        asyncResultHandler.handle(Future.failedFuture(reply.cause()));
-                    }
-                });
+            LOGGER.info("REPLY: " + reply.toString());
+            if (reply.succeeded()) {
+                ResourceCollection resources = new ResourceCollection();
+                List<Resource> resourceList = (List<Resource>) reply.result().getResults();
+                resources.setResources(resourceList);
+                Integer total = reply.result().getResultInfo().getTotalRecords();
+                resources.setTotalRecords(total);
+                asyncResultHandler.handle(
+                        Future.succeededFuture(GetResourcesResponse.withJsonOK(resources)));
+            } else {
+                ValidationHelper.handleError(reply.cause(), asyncResultHandler);
+            }
+        });
     }
 
     @Override
@@ -119,26 +107,19 @@ public class ResourcesResourceImpl implements ResourcesResource {
             entity.setId(UUID.randomUUID().toString());
         }
         PostgresClient postgresClient = getPostgresClient(okapiHeaders, vertxContext);
-        vertxContext.runOnContext(
-                v ->
-                        postgresClient.save(
-                                RESOURCE_TABLE,
-                                entity,
-                                reply -> {
-                                    if (reply.succeeded()) {
-                                        Object ret = reply.result();
-                                        entity.setId((String) ret);
-                                        OutStream stream = new OutStream();
-                                        stream.setData(entity);
-                                        asyncResultHandler.handle(
-                                                Future.succeededFuture(
-                                                        PostResourcesResponse.withJsonCreated(
-                                                                LOCATION_PREFIX + ret, stream)));
-                                    } else {
-                                        asyncResultHandler.handle(
-                                                Future.failedFuture(reply.cause()));
-                                    }
-                                }));
+        vertxContext.runOnContext(v ->
+                postgresClient.save(RESOURCE_TABLE, id, entity, reply -> {
+                    if (reply.succeeded()) {
+                        Object ret = reply.result();
+                        entity.setId((String) ret);
+                        OutStream stream = new OutStream();
+                        stream.setData(entity);
+                        asyncResultHandler.handle(Future.succeededFuture(
+                                PostResourcesResponse.withJsonCreated(LOCATION_PREFIX + ret, stream)));
+                    } else {
+                        ValidationHelper.handleError(reply.cause(), asyncResultHandler);
+                    }
+                }));
     }
 
     @Override
