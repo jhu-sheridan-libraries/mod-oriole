@@ -60,7 +60,7 @@ Future CRUD operations from the same tenant will be based on that database table
 
 ```bash 
 curl -D - -w '\n' -H "X-Okapi-Tenant: test" -H "Content-Type: application/json" \
-  --request POST --data '{"module_to": "mod-oriole-1.0"}' \
+  -X POST -d '{"module_to": "mod-oriole-1.0"}' \
   http://localhost:8081/_/tenant 
 ```
 
@@ -79,7 +79,7 @@ Transfer-Encoding: chunked
 "[ ]"
 ```
 
-### Fetch resources
+### Fetch resources (GET)
 
 To fetch the resources, use this command: 
 
@@ -107,3 +107,100 @@ Transfer-Encoding: chunked
 Note that it returns a 200 response, instead of the 500 error earlier in the Getting Started section. This is because 
 the database table has been created for this tenant and this module. There is no records found because we
 haven't post any resources in the database yet. 
+
+### Create resources (POST)
+
+Create a resource record in JSON: 
+
+```bash
+cat > /tmp/mod-oriole-resource-1.json <<END
+{
+  "id": "11111111-1111-1111-a111-111111111111",
+  "title": "PubMed",
+  "link": "https://www.ncbi.nlm.nih.gov/pubmed/",
+  "description": "PubMed is a free search engine accessing primarily the MEDLINE database of references and abstracts on life sciences and biomedical topics."
+}
+END
+```
+
+To post it to the API, use the following:
+
+```bash
+curl -D - -w '\n' -X POST -H "X-Okapi-Tenant: test" \
+  -H "Content-type: application/json" \
+  -d @/tmp/mod-oriole-resource-1.json \
+  http://localhost:8081/resources
+```
+
+The response should be a HTTP 201 response: 
+
+``` 
+HTTP/1.1 201 Created
+Content-Type: application/json
+Location: /resources/11111111-1111-1111-a111-111111111111
+host: localhost:8081
+user-agent: curl/7.54.0
+accept: */*
+x-okapi-tenant: test
+content-length: 276
+Transfer-Encoding: chunked
+
+{
+  "id" : "11111111-1111-1111-a111-111111111111",
+  "link" : "https://www.ncbi.nlm.nih.gov/pubmed/",
+  "title" : "PubMed",
+  "description" : "PubMed is a free search engine accessing primarily the MEDLINE database of references and abstracts on life sciences and biomedical topics."
+}
+```
+
+Try fetch again, and this time there should be one record found. 
+
+``` 
+$ curl -D - -w '\n' -H "X-Okapi-Tenant: test"  http://localhost:8081/resources
+HTTP/1.1 200 OK
+Content-Type: application/json
+host: localhost:8081
+user-agent: curl/7.54.0
+accept: */*
+x-okapi-tenant: test
+Transfer-Encoding: chunked
+
+{
+  "resources" : [ {
+    "resources" : [ ],
+    "link" : "https://www.ncbi.nlm.nih.gov/pubmed/",
+    "description" : "PubMed is a free search engine accessing primarily the MEDLINE database of references and abstracts on life sciences and biomedical topics.",
+    "id" : "11111111-1111-1111-a111-111111111111",
+    "title" : "PubMed"
+  } ],
+  "totalRecords" : 1
+}
+
+```
+
+### Fetch by ID
+
+To fetch the record by the ID (which is required to be a UUID), use the following: 
+
+```bash
+curl -D - -w '\n' -H "X-Okapi-Tenant: test"  http://localhost:8081/resources/11111111-1111-1111-a111-111111111111
+```
+
+The response would be like: 
+
+``` 
+HTTP/1.1 200 OK
+Content-Type: application/json
+host: localhost:8081
+user-agent: curl/7.54.0
+accept: */*
+x-okapi-tenant: test
+Transfer-Encoding: chunked
+
+{
+  "id" : "11111111-1111-1111-a111-111111111111",
+  "link" : "https://www.ncbi.nlm.nih.gov/pubmed/",
+  "title" : "PubMed",
+  "description" : "PubMed is a free search engine accessing primarily the MEDLINE database of references and abstracts on life sciences and biomedical topics."
+}
+```
