@@ -53,6 +53,8 @@ This is because the module hasn't been initialized. Keep reading for more comman
 
 ## Command Line
 
+The following examples are for interactions with the API when using the far jar file. 
+
 ### Register a tenant to the module
 
 First you need to initialize the module. This will create a database table for this module and the tenant. 
