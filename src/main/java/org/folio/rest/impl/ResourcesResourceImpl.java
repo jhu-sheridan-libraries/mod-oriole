@@ -2,6 +2,10 @@ package org.folio.rest.impl;
 
 import io.vertx.core.*;
 import org.apache.commons.io.IOUtils;
+import org.folio.okapi.common.ErrorType;
+import org.folio.okapi.common.ExtendedAsyncResult;
+import org.folio.okapi.common.Failure;
+import org.folio.okapi.common.Success;
 import org.folio.rest.RestVerticle;
 import org.folio.rest.jaxrs.model.Resource;
 import org.folio.rest.jaxrs.model.ResourceCollection;
@@ -131,31 +135,27 @@ public class ResourcesResourceImpl implements ResourcesResource {
         if (resourceId.equals("_self")) {
             return;
         }
-        Criterion c = new Criterion(
-                new Criteria().addField(ID_FIELD_NAME).setJSONB(false).setOperation("=").setValue("'"+resourceId+"'"));
-        getPostgresClient(okapiHeaders, vertxContext).get(RESOURCE_TABLE, Resource.class, c, true,
-                reply -> {
-            if (reply.succeeded()) {
-                List<Resource> resources = (List<Resource>)reply.result().getResults();
-                if (resources.isEmpty()) {
-                    asyncResultHandler.handle(Future.succeededFuture(
-                            GetResourcesByResourceIdResponse.withPlainNotFound(
-                                    "Resource " + resourceId + " not found")));
-                } else {
-                    Resource r = resources.get(0);
-                    asyncResultHandler.handle(
-                            Future.succeededFuture(GetResourcesByResourceIdResponse.withJsonOK(r)));
-                }
+        getOneResource(resourceId, okapiHeaders, vertxContext, res -> {
+            if (res.succeeded()) {
+                asyncResultHandler.handle(Future.succeededFuture(
+                        GetResourcesByResourceIdResponse.withJsonOK(res.result())));
             } else {
-                String error = PgExceptionUtil.badRequestMessage(reply.cause());
-                if (error == null) {
-                    asyncResultHandler.handle(Future.succeededFuture(
-                            GetResourcesByResourceIdResponse.withPlainInternalServerError(messages.getMessage(lang,
-                                    MessageConsts.InternalServerError))));
-                } else {
-                    asyncResultHandler.handle(Future.succeededFuture(
-                            GetResourcesByResourceIdResponse.withPlainBadRequest(reply.cause().getMessage())));
-
+                switch (res.getType()) {
+                    case NOT_FOUND:
+                        asyncResultHandler.handle(Future.succeededFuture(
+                                GetResourcesByResourceIdResponse.withPlainNotFound(res.cause().getMessage())));
+                        break;
+                    case USER:
+                        asyncResultHandler.handle(Future.succeededFuture(
+                                GetResourcesByResourceIdResponse.withPlainBadRequest(res.cause().getMessage())));
+                        break;
+                    default:
+                        String msg = res.cause().getMessage();
+                        if (msg.isEmpty()) {
+                            msg = messages.getMessage(lang, MessageConsts.InternalServerError);
+                        }
+                        asyncResultHandler.handle(Future.succeededFuture(
+                                GetResourcesByResourceIdResponse.withPlainInternalServerError(msg)));
                 }
             }
         });
@@ -168,7 +168,10 @@ public class ResourcesResourceImpl implements ResourcesResource {
             Map<String, String> okapiHeaders,
             Handler<AsyncResult<Response>> asyncResultHandler,
             Context vertxContext)
-            throws Exception {}
+            throws Exception {
+
+
+    }
 
     @Override
     public void putResourcesByResourceId(
@@ -179,6 +182,44 @@ public class ResourcesResourceImpl implements ResourcesResource {
             Handler<AsyncResult<Response>> asyncResultHandler,
             Context vertxContext)
             throws Exception {}
+
+    /**
+     * Helper to get a resource. Fetches the record from database.
+     * @param resourceId
+     * @param okapiHeaders
+     * @param context
+     * @param resp a callback that returns the resource, or an error
+     */
+    private void getOneResource(
+            String resourceId,
+            Map<String, String> okapiHeaders,
+            Context context,
+            Handler<ExtendedAsyncResult<Resource>> resp) {
+        Criterion c = new Criterion(
+                new Criteria().addField(ID_FIELD_NAME).setJSONB(false).setOperation("=").setValue("'"+resourceId+"'"));
+        getPostgresClient(okapiHeaders, context).get(RESOURCE_TABLE, Resource.class, c, true,
+                reply -> {
+                    if (reply.succeeded()) {
+                        List<Resource> resources = (List<Resource>)reply.result().getResults();
+                        if (resources.isEmpty()) {
+                            resp.handle(new Failure<>(
+                                    ErrorType.NOT_FOUND, "Resource " + resourceId + " not found"));
+                        } else {
+                            Resource r = resources.get(0);
+                            resp.handle(new Success<>(r));
+                        }
+                    } else {
+                        String error = PgExceptionUtil.badRequestMessage(reply.cause());
+                        if (error == null) {
+                            resp.handle(new Failure<>(ErrorType.INTERNAL, ""));
+                        } else {
+                            resp.handle(new Failure<Resource>(ErrorType.USER, error));
+
+                        }
+                    }
+                });
+    }
+
 
     private static PostgresClient getPostgresClient(
             Map<String, String> okapiHeaders, Context vertxContext) {
