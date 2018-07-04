@@ -187,7 +187,7 @@ Transfer-Encoding: chunked
 To fetch the record by the ID (which is required to be a UUID), use the following: 
 
 ```bash
-curl -D - -w '\n' -H "X-Okapi-Tenant: test"  http://localhost:8081/resources/11111111-1111-1111-a111-111111111111
+curl -D - -w '\n' -H "X-Okapi-Tenant: test" http://localhost:8081/resources/11111111-1111-1111-a111-111111111111
 ```
 
 The response would be like: 
@@ -208,3 +208,63 @@ Transfer-Encoding: chunked
   "description" : "PubMed is a free search engine accessing primarily the MEDLINE database of references and abstracts on life sciences and biomedical topics."
 }
 ```
+
+### Update record (PUT)
+
+Create an updated version of the resource record in JSON: 
+
+```bash
+cat > /tmp/mod-oriole-resource-2.json <<END
+{
+  "id": "11111111-1111-1111-a111-111111111111",
+  "title": "PubMed",
+  "link": "https://www.ncbi.nlm.nih.gov/pubmed/",
+  "description": "PubMed lists journal articles and more back to 1947."
+}
+END
+```
+
+Update the record with the file. 
+
+```bash 
+curl -D - -w '\n' -X PUT \
+  -H "X-Okapi-Tenant: test" \
+  -H "Content-Type: application/json" \
+  -d @/tmp/mod-oriole-resource-2.json \
+  http://localhost:8081/resources/11111111-1111-1111-a111-111111111111
+```
+
+The response would look like: 
+
+``` 
+HTTP/1.1 204 No Content
+host: localhost:8081
+user-agent: curl/7.54.0
+accept: */*
+x-okapi-tenant: test
+content-length: 189
+```
+
+
+### Delete a resource by ID (DELETE)
+
+```bash
+curl -D - -w '\n' -X DELETE \
+  -H "X-Okapi-Tenant: test" \
+  http://localhost:8081/resources/11111111-1111-1111-a111-111111111111
+```
+
+It returns a HTTP 204 response
+
+```
+HTTP/1.1 204 No Content
+host: localhost:8081
+user-agent: curl/7.54.0
+accept: */*
+x-okapi-tenant: test
+Content-Length: 0 
+```
+
+
+
+
