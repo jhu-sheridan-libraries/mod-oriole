@@ -26,11 +26,53 @@ mvn test
 
 ### Run the fat jar 
 
+
+#### With Embedded PostgreSQL
+
 To run the fat jar file directly, with embedded postresql:  
 
 ``` 
 java -jar target/mod-oriole-fat.jar embed_postgres=true
 ```
+
+#### With standalone PostgreSQL
+
+First set up PostgreSQL and create database and role. 
+
+On Mac, start psql client: 
+
+```
+psql postgres 
+```
+
+Create role and database
+
+```
+CREATE ROLE folio WITH PASSWORD 'folio123' LOGIN SUPERUSER;
+CREATE DATABASE folio WITH OWNER folio;
+```
+
+Create a postgres-conf.json file, and use it as the connection conf. 
+
+```
+cat > /tmp/postgres-conf.json <<END
+{
+  "host": "localhost",
+  "port": 5432,
+  "username": "folio",
+  "password": "folio123",
+  "database": "folio"
+}
+END
+```
+
+Start the fat jar with the db_connection option. 
+
+```
+java -jar target/mod-oriole-fat.jar db_connection=/tmp/postgres-conf.json
+```
+
+#### Check if server has started
 
 Try the following and you should get a 401 response. 
 
