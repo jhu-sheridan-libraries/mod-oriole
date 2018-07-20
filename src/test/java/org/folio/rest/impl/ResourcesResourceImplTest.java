@@ -432,5 +432,50 @@ public class ResourcesResourceImplTest {
                 .log().ifValidationFails()
                 .statusCode(204);
     }
+
+    @Test
+    public void testQuery(TestContext context) {
+        // initialize tenant
+        String tenants = "{\"module_to\":\"" + moduleId + "\"}";
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(tenants)
+                .post("/_/tenant")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(201);
+        // Post
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(resource)
+                .post("/resources")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(201);
+        // Search
+        given().header(TENANT_HEADER)
+                .get("/resources?query=title=PubMed")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(200)
+                .body(containsString("free search engine"))
+                .body(containsString("id"));
+        // Bad query
+        given().header(TENANT_HEADER)
+                .get("/resources?query=VERYBADQUERY")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(422)
+                .body(containsString("no serverChoiceIndexes defined"));
+        given().header(TENANT_HEADER)
+                .get("/resources?query=UNKNOWNFIELD=foobar")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(422)
+                .body(containsString("is not present in index"));
+
+    }
 }
 
