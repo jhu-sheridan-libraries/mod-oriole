@@ -4,7 +4,7 @@
             "id": "1234",
             "title": "PubMed",
             "description": "PubMed lists journal articles and more back to 1947. It indexes about 5,400 journals and covers the areas of medicine, nursing, dentistry, veterinary medicine, health care systems, preclinical sciences, and related areas. PubMed also links to online books and to most of the other NCBI databases. PubMed is a free database developed by the National Library of Medicine (NLM) and the National Center for Biotechnology Information (NCBI), both at the National Institutes of Health (NIH) in Bethesda, MD.",
-            "link": "https://www.ncbi.nlm.nih.gov/pubmed/"
+            "url": "https://www.ncbi.nlm.nih.gov/pubmed/"
         }
     ],
     "totalRecords": 1
