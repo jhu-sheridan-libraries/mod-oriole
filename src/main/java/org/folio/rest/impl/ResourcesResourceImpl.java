@@ -78,11 +78,12 @@ public class ResourcesResourceImpl implements ResourcesResource {
         try {
             cql = getCQL(query, limit, offset, RESOURCE_SCHEMA);
         } catch (Exception e) {
+            LOGGER.error(e.getMessage());
             asyncResultHandler.handle(Future.failedFuture(e));
+            return;
         }
         postgresClient.get(RESOURCE_TABLE, ResourceCollection.class, new String[] {"*"}, cql, true, false,
                 reply -> {
-            LOGGER.info("REPLY: " + reply.toString());
             if (reply.succeeded()) {
                 ResourceCollection resources = new ResourceCollection();
                 List<Resource> resourceList = (List<Resource>) reply.result().getResults();
@@ -308,6 +309,7 @@ public class ResourcesResourceImpl implements ResourcesResource {
         CQL2PgJSON cql2pgJson = null;
         if (schema != null) {
             cql2pgJson = new CQL2PgJSON(RESOURCE_TABLE + ".jsonb", schema);
+            //cql2pgJson = new CQL2PgJSON(RESOURCE_TABLE + ".jsonb");
         } else {
             cql2pgJson = new CQL2PgJSON(RESOURCE_TABLE + ".jsonb");
         }

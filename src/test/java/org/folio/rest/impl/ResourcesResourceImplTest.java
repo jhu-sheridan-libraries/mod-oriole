@@ -45,7 +45,7 @@ public class ResourcesResourceImplTest {
     private final String resource = "{"
             + "\"id\" : \"11111111-1111-1111-a111-111111111111\"," + LS
                 + "\"title\" : \"PubMed\"," + LS
-                + "\"link\" : \"https://www.ncbi.nlm.nih.gov/pubmed/\"," + LS
+                + "\"url\" : \"https://www.ncbi.nlm.nih.gov/pubmed/\"," + LS
                 + "\"description\" : \"PubMed is a free search engine accessing primarily the MEDLINE database of references and abstracts on life sciences and biomedical topics.\"}" + LS;
 
 
@@ -189,7 +189,7 @@ public class ResourcesResourceImplTest {
                 .statusCode(400)
                 .body(containsString("Json content error"));
 
-        String bad3 = resource.replaceFirst("link", "creatorUsername");
+        String bad3 = resource.replaceFirst("url", "creatorUsername");
         given().header(TENANT_HEADER)
                 .header(JSON)
                 .body(bad3)
@@ -199,9 +199,9 @@ public class ResourcesResourceImplTest {
                 .statusCode(422)
                 // English error message for Locale.US, see @Before
                 .body("errors[0].message", is("may not be null"))
-                .body("errors[0].parameters[0].key", is("link"));
+                .body("errors[0].parameters[0].key", is("url"));
 
-        String badfieldDoc = resource.replaceFirst("link", "UnknownFieldName");
+        String badfieldDoc = resource.replaceFirst("url", "UnknownFieldName");
         given().header(TENANT_HEADER)
                 .header(JSON)
                 .body(badfieldDoc)
@@ -391,7 +391,7 @@ public class ResourcesResourceImplTest {
         final String updated1 = "{"
                 + "\"id\" : \"11111111-1111-1111-a111-111111111111\"," + LS
                 + "\"title\" : \"PubMed\"," + LS
-                + "\"link\" : \"https://www.ncbi.nlm.nih.gov/pubmed/\"," + LS
+                + "\"url\" : \"https://www.ncbi.nlm.nih.gov/pubmed/\"," + LS
                 + "\"description\" : \"PubMed lists journal articles and more back to 1947.\"}" + LS;
 
         // ID doesn't match
@@ -462,6 +462,7 @@ public class ResourcesResourceImplTest {
                 .statusCode(200)
                 .body(containsString("free search engine"))
                 .body(containsString("id"));
+
         // Bad query
         given().header(TENANT_HEADER)
                 .get("/resources?query=VERYBADQUERY")

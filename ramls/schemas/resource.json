@@ -7,7 +7,7 @@
     "id": {
       "type": "string"
     },
-    "link": {
+    "url": {
       "type": "string",
       "description": "Link to the online resource",
       "example": "https://www.ncbi.nlm.nih.gov/pubmed/"
@@ -15,6 +15,38 @@
     "title": {
       "type": "string",
       "description": "The title of the resource"
+    },
+    "isProxied": {
+      "type": "boolean",
+      "description": "whether the resource is proxied? TODO: Default: true"
+    },
+    "enableProxyConfig": {
+      "type": "boolean",
+      "description": "whether proxy configuration (stanzas etc) is enabled"
+    },
+    "proxyConfig": {
+      "type": "string",
+      "description": "Stanzas. TODO: check if type needs to be 'text'"
+    },
+    "creator": {
+      "type": "string",
+      "description": "the creator of the database"
+    },
+    "publisher": {
+      "type": "string",
+      "description": "the publisher of the database"
+    },
+    "searchHints": {
+      "type": "string",
+      "description": "hints of how to do a search in the database"
+    },
+    "accessRestrictions": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "string"
+      },
+      "description": ""
     },
     "description": {
       "type": "string",
@@ -25,10 +57,16 @@
       "description": "username of the user who created the record",
       "example": "johndoe17",
       "readonly": true
+    },
+    "jhuId": {
+      "type": "string",
+      "description": "JHU Unique Identifier for the database",
+      "example": "jhu1234",
+      "readonly": false
     }
   },
   "required": [
-    "link",
+    "url",
     "title"
   ]
 }
