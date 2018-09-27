@@ -1,4 +1,4 @@
-#%RAML 0.8
+#%RAML 1.0
 title: Oriole
 version: v1
 baseUri: https://github.com/jhu-sheridan-libraries/mod-oriole
@@ -7,25 +7,23 @@ documentation:
   - title: mod-oriole API
     content: This module provide a backend for the Oriole database tool
 
-schemas:
-  - resource.json: !include schemas/resource.json
-  - resourceCollection: !include schemas/resource-collection.json
-  - errors: !include raml-util/schemas/errors.schema
-  - error.schema: !include raml-util/schemas/error.schema
-  - parameters.schema: !include raml-util/schemas/parameters.schema
-  - raml-util/schemas/metadata.schema: !include raml-util/schemas/metadata.schema
+types:
+  resource: !include schemas/resource.json
+  resourceCollection: !include schemas/resource-collection.json
+  errors: !include raml-util/schemas/errors.schema
 
 traits:
-  - validate: !include raml-util/traits/validation.raml
-  - pageable: !include raml-util/traits/pageable.raml
-  - searchable: !include raml-util/traits/searchable.raml
-  - validate: !include raml-util/traits/validation.raml
-  - secured: !include raml-util/traits/auth.raml
-  - language: !include raml-util/traits/language.raml
+  orderable: !include raml-util/traits/orderable.raml
+  validate: !include raml-util/traits/validation.raml
+  pageable: !include raml-util/traits/pageable.raml
+  searchable: !include raml-util/traits/searchable.raml
+  language: !include raml-util/traits/language.raml
+  facets: !include raml-util/traits/facets.raml
 
 resourceTypes:
-  - collection: !include raml-util/rtypes/collection.raml
-  - collection-item: !include raml-util/rtypes/item-collection.raml
+  collection: !include raml-util/rtypes/collection.raml
+  collection-item: !include raml-util/rtypes/item-collection.raml
+  get-only: !include raml-util/rtypes/get-only.raml
 
 /resources:
   displayName: Resources
@@ -33,7 +31,7 @@ resourceTypes:
   type:
     collection:
       schemaCollection: resourceCollection
-      schemaItem: resource.json
+      schemaItem: resource
       exampleCollection: !include examples/resource-collection.sample
       exampleItem: !include examples/resource.sample
   post:
@@ -50,7 +48,7 @@ resourceTypes:
     description: Get, Delete or Update a specific resource
     type:
       collection-item:
-        schema: resource.json
+        schema: resource
         exampleItem: !include examples/resource.sample
     get:
       is: [ validate ]

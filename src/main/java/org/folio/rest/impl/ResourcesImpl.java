@@ -10,7 +10,7 @@ import org.folio.rest.RestVerticle;
 import org.folio.rest.jaxrs.model.Errors;
 import org.folio.rest.jaxrs.model.Resource;
 import org.folio.rest.jaxrs.model.ResourceCollection;
-import org.folio.rest.jaxrs.resource.ResourcesResource;
+import org.folio.rest.jaxrs.resource.Resources;
 import org.folio.rest.persist.Criteria.Criteria;
 import org.folio.rest.persist.Criteria.Criterion;
 import org.folio.rest.persist.Criteria.Limit;
@@ -36,8 +36,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class ResourcesResourceImpl implements ResourcesResource {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ResourcesResourceImpl.class);
+public class ResourcesImpl implements Resources {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ResourcesImpl.class);
     public static final String RESOURCE_TABLE = "oriole_data";
     private static final String ID_FIELD_NAME = "id";
     private static final String RESOURCE_SCHEMA_NAME = "ramls/schemas/resource.json";
@@ -45,7 +45,7 @@ public class ResourcesResourceImpl implements ResourcesResource {
     private String RESOURCE_SCHEMA = null;
     private final Messages messages = Messages.getInstance();
 
-    public ResourcesResourceImpl(Vertx vertx, String tennantId) {
+    public ResourcesImpl(Vertx vertx, String tennantId) {
         if (RESOURCE_SCHEMA == null) {
             initCQLValidation();
         }
@@ -71,8 +71,7 @@ public class ResourcesResourceImpl implements ResourcesResource {
             String lang,
             Map<String, String> okapiHeaders,
             Handler<AsyncResult<Response>> asyncResultHandler,
-            Context vertxContext)
-            throws Exception {
+            Context vertxContext) {
         PostgresClient postgresClient = getPostgresClient(okapiHeaders, vertxContext);
         CQLWrapper cql = null;
         try {
@@ -82,16 +81,16 @@ public class ResourcesResourceImpl implements ResourcesResource {
             asyncResultHandler.handle(Future.failedFuture(e));
             return;
         }
-        postgresClient.get(RESOURCE_TABLE, ResourceCollection.class, new String[] {"*"}, cql, true, false,
+        postgresClient.get(RESOURCE_TABLE, Resource.class, new String[] {"*"}, cql, true, false,
                 reply -> {
             if (reply.succeeded()) {
                 ResourceCollection resources = new ResourceCollection();
-                List<Resource> resourceList = (List<Resource>) reply.result().getResults();
+                List<Resource> resourceList = reply.result().getResults();
                 resources.setResources(resourceList);
                 Integer total = reply.result().getResultInfo().getTotalRecords();
                 resources.setTotalRecords(total);
                 asyncResultHandler.handle(
-                        Future.succeededFuture(GetResourcesResponse.withJsonOK(resources)));
+                        Future.succeededFuture(GetResourcesResponse.respond200WithApplicationJson(resources)));
             } else {
                 ValidationHelper.handleError(reply.cause(), asyncResultHandler);
             }
@@ -104,8 +103,7 @@ public class ResourcesResourceImpl implements ResourcesResource {
             Resource entity,
             Map<String, String> okapiHeaders,
             Handler<AsyncResult<Response>> asyncResultHandler,
-            Context vertxContext)
-            throws Exception {
+            Context vertxContext) {
         String id = entity.getId();
         if (id == null || id.isEmpty()) {
             entity.setId(UUID.randomUUID().toString());
@@ -118,8 +116,10 @@ public class ResourcesResourceImpl implements ResourcesResource {
                         entity.setId((String) ret);
                         OutStream stream = new OutStream();
                         stream.setData(entity);
+                        PostResourcesResponse.HeadersFor201 headers =
+                                PostResourcesResponse.headersFor201().withLocation("/dummy/location");
                         asyncResultHandler.handle(Future.succeededFuture(
-                                PostResourcesResponse.withJsonCreated(LOCATION_PREFIX + ret, stream)));
+                                PostResourcesResponse.respond201WithApplicationJson(stream, headers)));
                     } else {
                         ValidationHelper.handleError(reply.cause(), asyncResultHandler);
                     }
@@ -132,24 +132,23 @@ public class ResourcesResourceImpl implements ResourcesResource {
             String lang,
             Map<String, String> okapiHeaders,
             Handler<AsyncResult<Response>> asyncResultHandler,
-            Context vertxContext)
-            throws Exception {
+            Context vertxContext) {
         if (resourceId.equals("_self")) {
             return;
         }
         getOneResource(resourceId, okapiHeaders, vertxContext, res -> {
             if (res.succeeded()) {
                 asyncResultHandler.handle(Future.succeededFuture(
-                        GetResourcesByResourceIdResponse.withJsonOK(res.result())));
+                        GetResourcesByResourceIdResponse.respond200WithApplicationJson(res.result())));
             } else {
                 switch (res.getType()) {
                     case NOT_FOUND:
                         asyncResultHandler.handle(Future.succeededFuture(
-                                GetResourcesByResourceIdResponse.withPlainNotFound(res.cause().getMessage())));
+                                GetResourcesByResourceIdResponse.respond404WithTextPlain(res.cause().getMessage())));
                         break;
                     case USER:
                         asyncResultHandler.handle(Future.succeededFuture(
-                                GetResourcesByResourceIdResponse.withPlainBadRequest(res.cause().getMessage())));
+                                GetResourcesByResourceIdResponse.respond400WithTextPlain(res.cause().getMessage())));
                         break;
                     default:
                         ValidationHelper.handleError(res.cause(), asyncResultHandler);
@@ -164,8 +163,7 @@ public class ResourcesResourceImpl implements ResourcesResource {
             String lang,
             Map<String, String> okapiHeaders,
             Handler<AsyncResult<Response>> asyncResultHandler,
-            Context vertxContext)
-            throws Exception {
+            Context vertxContext) {
         getOneResource(resourceId, okapiHeaders, vertxContext, res -> {
             if (res.succeeded()) {
                 getPostgresClient(okapiHeaders, vertxContext).delete(RESOURCE_TABLE, resourceId,
@@ -173,12 +171,12 @@ public class ResourcesResourceImpl implements ResourcesResource {
                     if (reply.succeeded()) {
                         if (reply.result().getUpdated() == 1) {
                             asyncResultHandler.handle(Future.succeededFuture(
-                                    DeleteResourcesByResourceIdResponse.withNoContent()));
+                                    DeleteResourcesByResourceIdResponse.respond204()));
                         } else {
                             LOGGER.error(messages.getMessage(lang, MessageConsts.DeletedCountError,
                                     1, reply.result().getUpdated()));
                             asyncResultHandler.handle(Future.succeededFuture(DeleteResourcesByResourceIdResponse
-                                    .withPlainNotFound(messages.getMessage(lang, MessageConsts.DeletedCountError,
+                                    .respond404WithTextPlain(messages.getMessage(lang, MessageConsts.DeletedCountError,
                                             1, reply.result().getUpdated()))));
                         }
                     } else {
@@ -190,11 +188,11 @@ public class ResourcesResourceImpl implements ResourcesResource {
                     // ValidationHelper can not handle these error types
                     case NOT_FOUND:
                         asyncResultHandler.handle(Future.succeededFuture(DeleteResourcesByResourceIdResponse
-                                .withPlainNotFound(res.cause().getMessage())));
+                                .respond404WithTextPlain(res.cause().getMessage())));
                         break;
                     case USER: // bad request
                         asyncResultHandler.handle(Future.succeededFuture(DeleteResourcesByResourceIdResponse
-                                .withPlainBadRequest(res.cause().getMessage())));
+                                .respond400WithTextPlain(res.cause().getMessage())));
                         break;
                     default: // typically INTERNAL
                         ValidationHelper.handleError(res.cause(), asyncResultHandler);
@@ -210,8 +208,7 @@ public class ResourcesResourceImpl implements ResourcesResource {
             Resource entity,
             Map<String, String> okapiHeaders,
             Handler<AsyncResult<Response>> asyncResultHandler,
-            Context vertxContext)
-            throws Exception {
+            Context vertxContext) {
         if (entity.getId() == null) {
             entity.setId(resourceId);
             LOGGER.debug("No ID in the resource. Take the one from the link");
@@ -220,7 +217,7 @@ public class ResourcesResourceImpl implements ResourcesResource {
             Errors valErr = ValidationHelper.createValidationErrorMessage("id",
                     entity.getId(), "Can not change Id");
             asyncResultHandler.handle(Future.succeededFuture(
-                    PutResourcesByResourceIdResponse.withJsonUnprocessableEntity(valErr)));
+                    PutResourcesByResourceIdResponse.respond422WithApplicationJson(valErr)));
             return;
         }
 
@@ -232,11 +229,11 @@ public class ResourcesResourceImpl implements ResourcesResource {
                     if (reply.succeeded()) {
                         if (reply.result().getUpdated() == 0) {
                             asyncResultHandler.handle(Future.succeededFuture(
-                                    PutResourcesByResourceIdResponse.withPlainInternalServerError(
+                                    PutResourcesByResourceIdResponse.respond500WithTextPlain(
                                             messages.getMessage(lang, MessageConsts.NoRecordsUpdated))));
                         } else {
                             asyncResultHandler.handle(Future.succeededFuture(
-                                    PutResourcesByResourceIdResponse.withNoContent()));
+                                    PutResourcesByResourceIdResponse.respond204()));
                         }
                     } else {
                         ValidationHelper.handleError(reply.cause(), asyncResultHandler);
@@ -246,11 +243,11 @@ public class ResourcesResourceImpl implements ResourcesResource {
                 switch (res.getType()) {
                     case NOT_FOUND:
                         asyncResultHandler.handle(Future.succeededFuture(PutResourcesByResourceIdResponse
-                                .withPlainNotFound(res.cause().getMessage())));
+                                .respond404WithTextPlain(res.cause().getMessage())));
                         break;
                     case USER: // bad request
                         asyncResultHandler.handle(Future.succeededFuture(PutResourcesByResourceIdResponse
-                                .withPlainBadRequest(res.cause().getMessage())));
+                                .respond400WithTextPlain(res.cause().getMessage())));
                         break;
                     default: // typically INTERNAL
                         ValidationHelper.handleError(res.cause(), asyncResultHandler);

@@ -65,6 +65,7 @@
       "readonly": false
     }
   },
+  "additionalProperties": false,
   "required": [
     "url",
     "title"
