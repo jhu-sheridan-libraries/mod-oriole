@@ -31,3 +31,6 @@ mod-oriole.iml
 # vertx
 .vertx
 
+# jenv
+.java-version
+
