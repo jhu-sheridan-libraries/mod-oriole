@@ -117,7 +117,7 @@ public class ResourcesImpl implements Resources {
                         OutStream stream = new OutStream();
                         stream.setData(entity);
                         PostResourcesResponse.HeadersFor201 headers =
-                                PostResourcesResponse.headersFor201().withLocation("/dummy/location");
+                                PostResourcesResponse.headersFor201().withLocation(LOCATION_PREFIX + ret);
                         asyncResultHandler.handle(Future.succeededFuture(
                                 PostResourcesResponse.respond201WithApplicationJson(stream, headers)));
                     } else {
