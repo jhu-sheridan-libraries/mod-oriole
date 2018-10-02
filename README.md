@@ -307,6 +307,21 @@ x-okapi-tenant: test
 Content-Length: 0 
 ```
 
+## Build Docker Image
+
+Build the docker image locally
+
+```bash 
+docker build -t dockerusername/oriole:version . 
+```
+
+Push the new image to docker hub
+
+```bash
+docker push dockerusername/oriole 
+```
+
+
 
 
 
