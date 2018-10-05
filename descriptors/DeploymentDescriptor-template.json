@@ -1,0 +1,5 @@
+{
+  "instId": "localhost-8081",
+  "srvcId": "${artifactId}-${version}",
+  "url" : "http://localhost:8081"
+}

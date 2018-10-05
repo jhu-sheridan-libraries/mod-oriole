@@ -321,7 +321,42 @@ Push the new image to docker hub
 docker push dockerusername/oriole 
 ```
 
+## Build on Vagrant Virtual Box
 
+First start vagrant
 
+```
+vagrant up
+```
+
+Logon to the vagrant virtual box
+
+``` 
+vagrant ssh 
+```
+
+Register the module
+
+```
+curl -w '\n' -D - -X POST -H "Content-type: application/json" -d @/vagrant/target/ModuleDescriptor.json http://localhost:9130/_/proxy/modules 
+```
+
+Deploy it
+
+```
+curl -w '\n' -D - -s -X POST -H "Content-type: application/json" -d @/vagrant/target/DeploymentDescriptor.json http://localhost:9130/_/discovery/modules
+```
+
+Enable it for the tenant `diku`
+
+```
+curl -w '\n' -X POST -D - -H "Content-type: application/json" -d@/vagrant/target/EnableModule.json http://localhost:9130/_/proxy/tenants/diku/modules 
+```
+
+Start the fat jar
+
+```
+cd /vagrant; java -jar /vagrant/target/mod-oriole-fat.jar db_connection=/vagrant/postgres-conf.json
+```
 
 

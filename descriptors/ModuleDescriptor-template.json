@@ -1,0 +1,54 @@
+{
+  "id": "${artifactId}-${version}",
+  "name": "oriole",
+  "provides": [
+    {
+      "id": "mod-oriole",
+      "version": "1.0",
+      "handlers": [
+        {
+          "methods": [ "GET" ],
+          "pathPattern": "/resources",
+          "permissionsRequired": [ "oriole.collection.get" ]
+        },
+        {
+          "methods": ["GET"],
+          "pathPattern": "/resources/{id}",
+          "permissionsRequired": [ "oriole.item.get" ]
+        },
+        {
+          "methods": [ "POST" ],
+          "pathPattern": "/resources",
+          "permissionsRequired": [ "oriole.item.post" ]
+        },
+        {
+          "methods": [ "PUT" ],
+          "pathPattern": "/resources/{id}",
+          "permissionsRequired": [ "oriole.collection.put" ]
+        }
+      ]
+    }
+  ],
+  "permissionSets": [
+    {
+      "permissionName": "oriole.collection.get",
+      "displayName": "Oriole resources collection get",
+      "description": "Get a collection of Oriole resource records"
+    },
+    {
+      "permissionName": "oriole.item.get",
+      "displayName": "Oriole resources item get",
+      "description": "Get an individual Oriole resource record"
+    },
+    {
+      "permissionName": "oriole.item.post",
+      "displayName": "Oriole resources item post",
+      "description": "Create new Oriole resource records"
+    },
+    {
+      "permissionName": "oriole.item.put",
+      "displayName": "Oriole resources item put",
+      "description": "Edit existing Oriole resource records"
+    }
+  ]
+}
