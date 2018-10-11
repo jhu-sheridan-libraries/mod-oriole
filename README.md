@@ -359,4 +359,18 @@ Start the fat jar
 cd /vagrant; java -jar /vagrant/target/mod-oriole-fat.jar db_connection=/vagrant/postgres-conf.json
 ```
 
+Enable for a tenent
+
+```
+curl -w '\n' -X POST -D - -H "Content-type: application/json" -d@/vagrant/target/EnableModule.json http://localhost:9130/_/proxy/tenants/diku/modules
+```
+
+We need to run the following step manually. 
+
+``` 
+curl -D - -w '\n' -H "X-Okapi-Tenant: diku" -H "Content-Type: application/json"   -X POST -d '{"module_to": "mod-oriole-1.0-SNAPSHOT"}'   http://localhost:8081/_/tenant
+```
+
+
+
 

@@ -8,18 +8,15 @@
       "handlers": [
         {
           "methods": [ "GET" ],
-          "pathPattern": "/resources",
-          "permissionsRequired": [ "oriole.collection.get" ]
+          "pathPattern": "/resources"
         },
         {
           "methods": ["GET"],
-          "pathPattern": "/resources/{id}",
-          "permissionsRequired": [ "oriole.item.get" ]
+          "pathPattern": "/resources/{id}"
         },
         {
           "methods": [ "POST" ],
-          "pathPattern": "/resources",
-          "permissionsRequired": [ "oriole.item.post" ]
+          "pathPattern": "/resources"
         },
         {
           "methods": [ "PUT" ],
