@@ -46,6 +46,7 @@ public class ResourcesResourceImplTest {
             + "\"id\" : \"11111111-1111-1111-a111-111111111111\"," + LS
                 + "\"title\" : \"PubMed\"," + LS
                 + "\"url\" : \"https://www.ncbi.nlm.nih.gov/pubmed/\"," + LS
+                + "\"type\": \"databases\"," + LS
                 + "\"description\" : \"PubMed is a free search engine accessing primarily the MEDLINE database of references and abstracts on life sciences and biomedical topics.\"}" + LS;
 
 
@@ -392,6 +393,7 @@ public class ResourcesResourceImplTest {
                 + "\"id\" : \"11111111-1111-1111-a111-111111111111\"," + LS
                 + "\"title\" : \"PubMed\"," + LS
                 + "\"url\" : \"https://www.ncbi.nlm.nih.gov/pubmed/\"," + LS
+                + "\"type\": \"databases\"," + LS
                 + "\"description\" : \"PubMed lists journal articles and more back to 1947.\"}" + LS;
 
         // ID doesn't match
