@@ -5,7 +5,8 @@
   "additionalProperties": false,
   "properties": {
     "id": {
-      "type": "string"
+      "type": "string",
+      "description": "the system-generated ID of the record within its own system"
     },
     "url": {
       "type": "string",
@@ -14,39 +15,15 @@
     },
     "title": {
       "type": "string",
-      "description": "The title of the resource"
+      "description": "the primary title (or label) associated with the resource"
     },
-    "isProxied": {
-      "type": "boolean",
-      "description": "whether the resource is proxied? TODO: Default: true"
-    },
-    "enableProxyConfig": {
-      "type": "boolean",
-      "description": "whether proxy configuration (stanzas etc) is enabled"
-    },
-    "proxyConfig": {
+    "altTitle": {
       "type": "string",
-      "description": "Stanzas. TODO: check if type needs to be 'text'"
-    },
-    "creator": {
-      "type": "string",
-      "description": "the creator of the database"
+      "description": "an alternative title for the resource."
     },
     "publisher": {
       "type": "string",
-      "description": "the publisher of the database"
-    },
-    "searchHints": {
-      "type": "string",
-      "description": "hints of how to do a search in the database"
-    },
-    "accessRestrictions": {
-      "type": "array",
-      "minItems": 0,
-      "items": {
-        "type": "string"
-      },
-      "description": ""
+      "description": "name of publisher of the resource"
     },
     "description": {
       "type": "string",
@@ -58,16 +35,56 @@
       "example": "johndoe17",
       "readonly": true
     },
-    "jhuId": {
+    "type": {
       "type": "string",
-      "description": "JHU Unique Identifier for the database",
-      "example": "jhu1234",
-      "readonly": false
+      "description": "content type of the resource",
+      "enum": [
+        "audio",
+        "audiobooks",
+        "databases",
+        "ebooks",
+        "handbooks",
+        "maps",
+        "music",
+        "newspapers",
+        "newsletters",
+        "patents",
+        "periodicals",
+        "posters",
+        "proceedings",
+        "reports",
+        "standards",
+        "thesisanddissertation",
+        "unspecified",
+        "video",
+        "webresources"
+      ]
+    },
+    "identifier": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "identifier type : e.g. ISSN"
+          },
+          "type": {
+            "type": "string",
+            "description": "identifier value"
+          }
+        }
+      },
+      "additionalItems": true,
+      "uniqueItems": true,
+      "description": "an extensible set of name-value pairs of identifiers associated with the resource"
     }
   },
-  "additionalProperties": false,
   "required": [
-    "url",
-    "title"
+    "id",
+    "title",
+    "type",
+    "url"
   ]
 }
