@@ -211,6 +211,16 @@ public class ResourcesResourceImplTest {
                 .log().ifValidationFails()
                 .statusCode(422)
                 .body(containsString("Unrecognized field"));
+
+        String badTypeDoc = resource.replaceFirst("databases", "UnknownType");
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(badTypeDoc)
+                .post("/resources")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(400)
+                .body(containsString("problem: UnknownType"));
     }
 
     @Test
