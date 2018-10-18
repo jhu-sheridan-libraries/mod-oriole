@@ -9,7 +9,7 @@ documentation:
 
 types:
   resource: !include schemas/resource.json
-  resourceCollection: !include schemas/resource-collection.json
+  resourceCollection: !include schemas/resources.json
   errors: !include raml-util/schemas/errors.schema
 
 traits:
@@ -25,15 +25,15 @@ resourceTypes:
   collection-item: !include raml-util/rtypes/item-collection.raml
   get-only: !include raml-util/rtypes/get-only.raml
 
-/resources:
+/oriole-resources:
   displayName: Resources
   description: Resources Collection
   type:
     collection:
       schemaCollection: resourceCollection
       schemaItem: resource
-      exampleCollection: !include examples/resource-collection.sample
-      exampleItem: !include examples/resource.sample
+      exampleCollection: !include examples/resources.json
+      exampleItem: !include examples/resource.json
   post:
     is: [ validate ]
   get:
@@ -49,7 +49,7 @@ resourceTypes:
     type:
       collection-item:
         schema: resource
-        exampleItem: !include examples/resource.sample
+        exampleItem: !include examples/resource.json
     get:
       is: [ validate ]
       responses:

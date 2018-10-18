@@ -1,7 +1,7 @@
 {
   "tables": [
     {
-      "tableName": "oriole_data",
+      "tableName": "resource",
       "fromModuleVersion": 0.2,
       "withMetadata": true,
       "generateId": true,
@@ -12,6 +12,25 @@
           "tOps": "ADD",
           "caseSensitive": false,
           "removeAccents": true
+        }
+      ]
+    },
+    {
+      "tableName": "location",
+      "withMetadata": true,
+      "pkColumnName": "_id",
+      "generateId": false,
+      "withAuditing": false,
+      "uniqueIndex": [
+        {
+          "fieldName": "name",
+          "tOps": "ADD"
+        }
+      ],
+      "index": [
+        {
+          "fieldName": "id",
+          "tOps": "ADD"
         }
       ]
     }

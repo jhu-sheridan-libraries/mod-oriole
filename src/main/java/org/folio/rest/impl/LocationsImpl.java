@@ -8,9 +8,9 @@ import org.folio.okapi.common.Failure;
 import org.folio.okapi.common.Success;
 import org.folio.rest.RestVerticle;
 import org.folio.rest.jaxrs.model.Errors;
-import org.folio.rest.jaxrs.model.Resource;
-import org.folio.rest.jaxrs.model.ResourceCollection;
-import org.folio.rest.jaxrs.resource.OrioleResources;
+import org.folio.rest.jaxrs.model.Location;
+import org.folio.rest.jaxrs.model.LocationCollection;
+import org.folio.rest.jaxrs.resource.OrioleLocations;
 import org.folio.rest.persist.Criteria.Criteria;
 import org.folio.rest.persist.Criteria.Criterion;
 import org.folio.rest.persist.Criteria.Limit;
@@ -36,27 +36,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class ResourcesImpl implements OrioleResources {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ResourcesImpl.class);
-    public static final String RESOURCE_TABLE = "resource";
+public class LocationsImpl implements OrioleLocations {
+    private static final Logger LOGGER = LoggerFactory.getLogger(LocationsImpl.class);
+    public static final String LOCATIONS_TABLE = "location";
     private static final String ID_FIELD_NAME = "id";
-    private static final String RESOURCE_SCHEMA_NAME = "ramls/schemas/resource.json";
-    private static final String LOCATION_PREFIX = "/oriole-resources/";
-    private String RESOURCE_SCHEMA = null;
+    private static final String LOCATION_SCHEMA_NAME = "ramls/schemas/location.json";
+    private static final String LOCATION_PREFIX = "/oriole-locations/";
+    private String LOCATION_SCHEMA = null;
     private final Messages messages = Messages.getInstance();
 
-    public ResourcesImpl(Vertx vertx, String tennantId) {
-        if (RESOURCE_SCHEMA == null) {
+    public LocationsImpl(Vertx vertx, String tennantId) {
+        if (LOCATION_SCHEMA == null) {
             initCQLValidation();
         }
         PostgresClient.getInstance(vertx, tennantId).setIdField(ID_FIELD_NAME);
     }
 
     private void initCQLValidation() {
-        String path = RESOURCE_SCHEMA_NAME;
+        String path = LOCATION_SCHEMA_NAME;
         try {
             InputStream is = getClass().getClassLoader().getResourceAsStream(path);
-            RESOURCE_SCHEMA = IOUtils.toString(is, "UTF-8");
+            LOCATION_SCHEMA = IOUtils.toString(is, "UTF-8");
         } catch (Exception e) {
             LOGGER.error("Unable to load schema - " + path
                     + ", validation of query fields will not be active");
@@ -64,7 +64,7 @@ public class ResourcesImpl implements OrioleResources {
     }
 
     @Override
-    public void getOrioleResources(
+    public void getOrioleLocations(
             String query,
             int offset,
             int limit,
@@ -75,22 +75,22 @@ public class ResourcesImpl implements OrioleResources {
         PostgresClient postgresClient = getPostgresClient(okapiHeaders, vertxContext);
         CQLWrapper cql = null;
         try {
-            cql = getCQL(query, limit, offset, RESOURCE_SCHEMA);
+            cql = getCQL(query, limit, offset, LOCATION_SCHEMA);
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
             asyncResultHandler.handle(Future.failedFuture(e));
             return;
         }
-        postgresClient.get(RESOURCE_TABLE, Resource.class, new String[] {"*"}, cql, true, false,
+        postgresClient.get(LOCATIONS_TABLE, Location.class, new String[] {"*"}, cql, true, false,
                 reply -> {
             if (reply.succeeded()) {
-                ResourceCollection resources = new ResourceCollection();
-                List<Resource> resourceList = reply.result().getResults();
-                resources.setResources(resourceList);
+                LocationCollection locations = new LocationCollection();
+                List<Location> locationList = reply.result().getResults();
+                locations.setLocations(locationList);
                 Integer total = reply.result().getResultInfo().getTotalRecords();
-                resources.setTotalRecords(total);
+                locations.setTotalRecords(total);
                 asyncResultHandler.handle(
-                        Future.succeededFuture(GetOrioleResourcesResponse.respond200WithApplicationJson(resources)));
+                        Future.succeededFuture(GetOrioleLocationsResponse.respond200WithApplicationJson(locations)));
             } else {
                 ValidationHelper.handleError(reply.cause(), asyncResultHandler);
             }
@@ -98,9 +98,9 @@ public class ResourcesImpl implements OrioleResources {
     }
 
     @Override
-    public void postOrioleResources(
+    public void postOrioleLocations(
             String lang,
-            Resource entity,
+            Location entity,
             Map<String, String> okapiHeaders,
             Handler<AsyncResult<Response>> asyncResultHandler,
             Context vertxContext) {
@@ -110,16 +110,16 @@ public class ResourcesImpl implements OrioleResources {
         }
         PostgresClient postgresClient = getPostgresClient(okapiHeaders, vertxContext);
         vertxContext.runOnContext(v ->
-                postgresClient.save(RESOURCE_TABLE, id, entity, reply -> {
+                postgresClient.save(LOCATIONS_TABLE, id, entity, reply -> {
                     if (reply.succeeded()) {
                         Object ret = reply.result();
                         entity.setId((String) ret);
                         OutStream stream = new OutStream();
                         stream.setData(entity);
-                        PostOrioleResourcesResponse.HeadersFor201 headers =
-                                PostOrioleResourcesResponse.headersFor201().withLocation(LOCATION_PREFIX + ret);
+                        PostOrioleLocationsResponse.HeadersFor201 headers =
+                                PostOrioleLocationsResponse.headersFor201().withLocation(LOCATION_PREFIX + ret);
                         asyncResultHandler.handle(Future.succeededFuture(
-                                PostOrioleResourcesResponse.respond201WithApplicationJson(stream, headers)));
+                                PostOrioleLocationsResponse.respond201WithApplicationJson(stream, headers)));
                     } else {
                         ValidationHelper.handleError(reply.cause(), asyncResultHandler);
                     }
@@ -127,28 +127,53 @@ public class ResourcesImpl implements OrioleResources {
     }
 
     @Override
-    public void getOrioleResourcesByResourceId(
-            String resourceId,
+    public void deleteOrioleLocations(
             String lang,
             Map<String, String> okapiHeaders,
             Handler<AsyncResult<Response>> asyncResultHandler,
             Context vertxContext) {
-        if (resourceId.equals("_self")) {
+        String tennantId = TenantTool.tenantId(okapiHeaders);
+        try {
+            vertxContext.runOnContext(v -> {
+                PostgresClient postgresClient = getPostgresClient(okapiHeaders, vertxContext);
+                postgresClient.mutate(String.format("DELETE FROM %s_%s.%s", tennantId, "mod_oriole", LOCATIONS_TABLE),
+                        reply -> {
+                    if (reply.succeeded()) {
+                        asyncResultHandler.handle(Future.succeededFuture(DeleteOrioleLocationsResponse.noContent().build()));
+                    } else {
+                        asyncResultHandler.handle(Future.succeededFuture(
+                                DeleteOrioleLocationsResponse.respond500WithTextPlain(reply.cause().getMessage())));
+                    }
+                });
+            });
+        } catch (Exception e) {
+            asyncResultHandler.handle(Future.failedFuture(e));
+        }
+    }
+
+    @Override
+    public void getOrioleLocationsByLocationId(
+            String locationId,
+            String lang,
+            Map<String, String> okapiHeaders,
+            Handler<AsyncResult<Response>> asyncResultHandler,
+            Context vertxContext) {
+        if (locationId.equals("_self")) {
             return;
         }
-        getOneResource(resourceId, okapiHeaders, vertxContext, res -> {
+        getOneLocation(locationId, okapiHeaders, vertxContext, res -> {
             if (res.succeeded()) {
                 asyncResultHandler.handle(Future.succeededFuture(
-                        GetOrioleResourcesByResourceIdResponse.respond200WithApplicationJson(res.result())));
+                        GetOrioleLocationsByLocationIdResponse.respond200WithApplicationJson(res.result())));
             } else {
                 switch (res.getType()) {
                     case NOT_FOUND:
                         asyncResultHandler.handle(Future.succeededFuture(
-                                GetOrioleResourcesByResourceIdResponse.respond404WithTextPlain(res.cause().getMessage())));
+                                GetOrioleLocationsByLocationIdResponse.respond404WithTextPlain(res.cause().getMessage())));
                         break;
                     case USER:
                         asyncResultHandler.handle(Future.succeededFuture(
-                                GetOrioleResourcesByResourceIdResponse.respond400WithTextPlain(res.cause().getMessage())));
+                                GetOrioleLocationsByLocationIdResponse.respond400WithTextPlain(res.cause().getMessage())));
                         break;
                     default:
                         ValidationHelper.handleError(res.cause(), asyncResultHandler);
@@ -158,25 +183,23 @@ public class ResourcesImpl implements OrioleResources {
     }
 
     @Override
-    public void deleteOrioleResourcesByResourceId(
-            String resourceId,
+    public void deleteOrioleLocationsByLocationId(
+            String locationId,
             String lang,
             Map<String, String> okapiHeaders,
             Handler<AsyncResult<Response>> asyncResultHandler,
             Context vertxContext) {
-        getOneResource(resourceId, okapiHeaders, vertxContext, res -> {
+        getOneLocation(locationId, okapiHeaders, vertxContext, res -> {
             if (res.succeeded()) {
-                getPostgresClient(okapiHeaders, vertxContext).delete(RESOURCE_TABLE, resourceId,
-                        reply -> {
+                getPostgresClient(okapiHeaders, vertxContext).delete(LOCATIONS_TABLE, locationId, reply -> {
                     if (reply.succeeded()) {
                         if (reply.result().getUpdated() == 1) {
-                            asyncResultHandler.handle(Future.succeededFuture(
-                                    DeleteOrioleResourcesByResourceIdResponse.respond204()));
+                            asyncResultHandler.handle(Future.succeededFuture(DeleteOrioleLocationsByLocationIdResponse.respond204()));
                         } else {
-                            LOGGER.error(messages.getMessage(lang, MessageConsts.DeletedCountError,
-                                    1, reply.result().getUpdated()));
-                            asyncResultHandler.handle(Future.succeededFuture(DeleteOrioleResourcesByResourceIdResponse
-                                    .respond404WithTextPlain(messages.getMessage(lang, MessageConsts.DeletedCountError,
+                            LOGGER.error(messages.getMessage(lang, MessageConsts.DeletedCountError, 1,
+                                    reply.result().getUpdated()));
+                            asyncResultHandler.handle(Future.succeededFuture(DeleteOrioleLocationsByLocationIdResponse.
+                                    respond404WithTextPlain(messages.getMessage(lang, MessageConsts.DeletedCountError,
                                             1, reply.result().getUpdated()))));
                         }
                     } else {
@@ -185,55 +208,51 @@ public class ResourcesImpl implements OrioleResources {
                 });
             } else {
                 switch (res.getType()) {
-                    // ValidationHelper can not handle these error types
                     case NOT_FOUND:
-                        asyncResultHandler.handle(Future.succeededFuture(DeleteOrioleResourcesByResourceIdResponse
+                        asyncResultHandler.handle(Future.succeededFuture(DeleteOrioleLocationsByLocationIdResponse
                                 .respond404WithTextPlain(res.cause().getMessage())));
                         break;
-                    case USER: // bad request
-                        asyncResultHandler.handle(Future.succeededFuture(DeleteOrioleResourcesByResourceIdResponse
+                    case USER:
+                        asyncResultHandler.handle(Future.succeededFuture(DeleteOrioleLocationsByLocationIdResponse
                                 .respond400WithTextPlain(res.cause().getMessage())));
                         break;
-                    default: // typically INTERNAL
+                    default:
                         ValidationHelper.handleError(res.cause(), asyncResultHandler);
+
                 }
             }
         });
     }
 
     @Override
-    public void putOrioleResourcesByResourceId(
-            String resourceId,
+    public void putOrioleLocationsByLocationId(
+            String locationId,
             String lang,
-            Resource entity,
+            Location entity,
             Map<String, String> okapiHeaders,
             Handler<AsyncResult<Response>> asyncResultHandler,
             Context vertxContext) {
         if (entity.getId() == null) {
-            entity.setId(resourceId);
-            LOGGER.debug("No ID in the resource. Take the one from the link");
+            entity.setId(locationId);
+            LOGGER.debug("No ID in the location. Take the one from the link");
         }
-        if (!entity.getId().equals(resourceId)) {
-            Errors valErr = ValidationHelper.createValidationErrorMessage("id",
-                    entity.getId(), "Can not change Id");
-            asyncResultHandler.handle(Future.succeededFuture(
-                    PutOrioleResourcesByResourceIdResponse.respond422WithApplicationJson(valErr)));
+        if (!entity.getId().equals(locationId)) {
+            Errors valErr = ValidationHelper.createValidationErrorMessage("id", entity.getId(), "Can't change Id");
+            asyncResultHandler.handle(Future.succeededFuture(PutOrioleLocationsByLocationIdResponse.respond422WithApplicationJson(valErr)));
             return;
         }
-
-        getOneResource(resourceId, okapiHeaders, vertxContext, res -> {
+        getOneLocation(locationId, okapiHeaders, vertxContext, res -> {
             if (res.succeeded()) {
-                Resource oldRes = res.result();
-                getPostgresClient(okapiHeaders, vertxContext).update(RESOURCE_TABLE, entity, resourceId,
-                        reply -> {
+                Location oldLocation = res.result();
+                getPostgresClient(okapiHeaders, vertxContext).update(LOCATIONS_TABLE, entity, locationId, reply -> {
                     if (reply.succeeded()) {
                         if (reply.result().getUpdated() == 0) {
                             asyncResultHandler.handle(Future.succeededFuture(
-                                    PutOrioleResourcesByResourceIdResponse.respond500WithTextPlain(
+                                    PutOrioleLocationsByLocationIdResponse.respond500WithTextPlain(
                                             messages.getMessage(lang, MessageConsts.NoRecordsUpdated))));
                         } else {
                             asyncResultHandler.handle(Future.succeededFuture(
-                                    PutOrioleResourcesByResourceIdResponse.respond204()));
+                                    PutOrioleLocationsByLocationIdResponse.respond204()));
                         }
                     } else {
                         ValidationHelper.handleError(reply.cause(), asyncResultHandler);
@@ -242,11 +261,11 @@ public class ResourcesImpl implements OrioleResources {
             } else {
                 switch (res.getType()) {
                     case NOT_FOUND:
-                        asyncResultHandler.handle(Future.succeededFuture(PutOrioleResourcesByResourceIdResponse
+                        asyncResultHandler.handle(Future.succeededFuture(PutOrioleLocationsByLocationIdResponse
                                 .respond404WithTextPlain(res.cause().getMessage())));
                         break;
                     case USER: // bad request
-                        asyncResultHandler.handle(Future.succeededFuture(PutOrioleResourcesByResourceIdResponse
+                        asyncResultHandler.handle(Future.succeededFuture(PutOrioleLocationsByLocationIdResponse
                                 .respond400WithTextPlain(res.cause().getMessage())));
                         break;
                     default: // typically INTERNAL
@@ -255,44 +274,6 @@ public class ResourcesImpl implements OrioleResources {
             }
         });
     }
-
-    /**
-     * Helper to get a resource. Fetches the record from database.
-     * @param resourceId
-     * @param okapiHeaders
-     * @param context
-     * @param resp a callback that returns the resource, or an error
-     */
-    private void getOneResource(
-            String resourceId,
-            Map<String, String> okapiHeaders,
-            Context context,
-            Handler<ExtendedAsyncResult<Resource>> resp) {
-        Criterion c = new Criterion(
-                new Criteria().addField(ID_FIELD_NAME).setJSONB(false).setOperation("=").setValue("'"+resourceId+"'"));
-        getPostgresClient(okapiHeaders, context).get(RESOURCE_TABLE, Resource.class, c, true,
-                reply -> {
-                    if (reply.succeeded()) {
-                        List<Resource> resources = (List<Resource>)reply.result().getResults();
-                        if (resources.isEmpty()) {
-                            resp.handle(new Failure<>(
-                                    ErrorType.NOT_FOUND, "Resource " + resourceId + " not found"));
-                        } else {
-                            Resource r = resources.get(0);
-                            resp.handle(new Success<>(r));
-                        }
-                    } else {
-                        String error = PgExceptionUtil.badRequestMessage(reply.cause());
-                        if (error == null) {
-                            resp.handle(new Failure<>(ErrorType.INTERNAL, ""));
-                        } else {
-                            resp.handle(new Failure<Resource>(ErrorType.USER, error));
-
-                        }
-                    }
-                });
-    }
-
 
     private static PostgresClient getPostgresClient(Map<String, String> okapiHeaders, Context vertxContext) {
         String tenantId = TenantTool.calculateTenantId(okapiHeaders.get(RestVerticle.OKAPI_HEADER_TENANT));
@@ -303,13 +284,50 @@ public class ResourcesImpl implements OrioleResources {
             throws IOException, FieldException, SchemaException {
         CQL2PgJSON cql2pgJson = null;
         if (schema != null) {
-            cql2pgJson = new CQL2PgJSON(RESOURCE_TABLE + ".jsonb", schema);
+            cql2pgJson = new CQL2PgJSON(LOCATIONS_TABLE + ".jsonb", schema);
             //cql2pgJson = new CQL2PgJSON(RESOURCE_TABLE + ".jsonb");
         } else {
-            cql2pgJson = new CQL2PgJSON(RESOURCE_TABLE + ".jsonb");
+            cql2pgJson = new CQL2PgJSON(LOCATIONS_TABLE + ".jsonb");
         }
         return new CQLWrapper(cql2pgJson, query)
                 .setLimit(new Limit(limit))
                 .setOffset(new Offset(offset));
+    }
+
+    /**
+     * Helper to get a location. Fetches the record from database.
+     * @param locationId
+     * @param okapiHeaders
+     * @param context
+     * @param resp a callback that returns the location, or an error
+     */
+    private void getOneLocation(
+            String locationId,
+            Map<String, String> okapiHeaders,
+            Context context,
+            Handler<ExtendedAsyncResult<Location>> resp) {
+        Criterion c = new Criterion(
+                new Criteria().addField(ID_FIELD_NAME).setJSONB(false).setOperation("=").setValue("'"+locationId+"'"));
+        getPostgresClient(okapiHeaders, context).get(LOCATIONS_TABLE, Location.class, c, true,
+                reply -> {
+                    if (reply.succeeded()) {
+                        List<Location> Locations = (List<Location>)reply.result().getResults();
+                        if (Locations.isEmpty()) {
+                            resp.handle(new Failure<>(
+                                    ErrorType.NOT_FOUND, "Location " + locationId + " not found"));
+                        } else {
+                            Location l = Locations.get(0);
+                            resp.handle(new Success<>(l));
+                        }
+                    } else {
+                        String error = PgExceptionUtil.badRequestMessage(reply.cause());
+                        if (error == null) {
+                            resp.handle(new Failure<>(ErrorType.INTERNAL, ""));
+                        } else {
+                            resp.handle(new Failure<>(ErrorType.USER, error));
+
+                        }
+                    }
+                });
     }
 }

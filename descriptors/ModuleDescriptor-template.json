@@ -1,27 +1,62 @@
 {
   "id": "${artifactId}-${version}",
-  "name": "oriole",
+  "name": "The ORIOLE module",
   "provides": [
     {
-      "id": "mod-oriole",
+      "id": "oriole-resources",
       "version": "1.0",
       "handlers": [
         {
           "methods": [ "GET" ],
-          "pathPattern": "/resources"
+          "pathPattern": "/oriole-resources"
         },
         {
           "methods": ["GET"],
-          "pathPattern": "/resources/{id}"
+          "pathPattern": "/oriole-resources/{id}"
         },
         {
           "methods": [ "POST" ],
-          "pathPattern": "/resources"
+          "pathPattern": "/oriole-resources"
         },
         {
           "methods": [ "PUT" ],
-          "pathPattern": "/resources/{id}",
+          "pathPattern": "/oriole-resources/{id}",
           "permissionsRequired": [ "oriole.collection.put" ]
+        },
+        {
+          "methods": [ "DELETE" ],
+          "pathPattern": "/oriole-resources/{id}"
+        }
+      ]
+    },
+    {
+      "id": "oriole-locations",
+      "version": "1.0",
+      "handlers": [
+        {
+          "methods": [ "GET" ],
+          "pathPattern": "/oriole-locations"
+        },
+        {
+          "methods": [ "GET" ],
+          "pathPattern": "/oriole-locations/{id}"
+        },
+        {
+          "methods": [ "POST" ],
+          "pathPattern": "/oriole-locations"
+        },
+        {
+          "methods": [ "PUT" ],
+          "pathPattern": "/oriole-locations/{id}",
+          "permissionsRequired": [ "oriole.collection.put" ]
+        },
+        {
+          "methods": [ "DELETE" ],
+          "pathPattern": "/oriole-locations/{id}"
+        },
+        {
+          "methods": [ "DELETE" ],
+          "pathPattern": "/oriole-locations"
         }
       ]
     }

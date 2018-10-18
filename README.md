@@ -347,12 +347,6 @@ Deploy it
 curl -w '\n' -D - -s -X POST -H "Content-type: application/json" -d @/vagrant/target/DeploymentDescriptor.json http://localhost:9130/_/discovery/modules
 ```
 
-Enable it for the tenant `diku`
-
-```
-curl -w '\n' -X POST -D - -H "Content-type: application/json" -d@/vagrant/target/EnableModule.json http://localhost:9130/_/proxy/tenants/diku/modules 
-```
-
 Start the fat jar
 
 ```
