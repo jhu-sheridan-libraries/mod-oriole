@@ -95,4 +95,37 @@ public class LocationsImplTest {
                 .statusCode(400)
                 .body(containsString("Tenant"));
     }
+
+    @Test
+    public void testPostAndFetch(TestContext context) {
+        // initialize tenant
+        String tenants = "{\"module_to\":\"" + moduleId + "\"}";
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(tenants)
+                .post("/_/tenant")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(201);
+        // Post
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(location)
+                .post("/oriole-locations")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(201);
+
+        // Fetch the posted resource
+        given().header(TENANT_HEADER)
+                .get("/oriole-locations")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(200)
+                .body(containsString("welch"))
+                .body(containsString("\"totalRecords\" : 1"));
+    }
 }

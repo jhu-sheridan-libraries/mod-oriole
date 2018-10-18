@@ -18,7 +18,7 @@
     {
       "tableName": "location",
       "withMetadata": true,
-      "pkColumnName": "_id",
+      "pkColumnName": "id",
       "generateId": false,
       "withAuditing": false,
       "uniqueIndex": [
