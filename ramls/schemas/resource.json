@@ -79,12 +79,14 @@
       "additionalItems": true,
       "uniqueItems": true,
       "description": "an extensible set of name-value pairs of identifiers associated with the resource"
+    },
+    "locationId": {
+      "type": "string"
     }
   },
   "required": [
     "id",
     "title",
-    "type",
     "url"
   ]
 }

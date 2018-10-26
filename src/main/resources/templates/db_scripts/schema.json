@@ -1,21 +1,6 @@
 {
   "tables": [
     {
-      "tableName": "resource",
-      "fromModuleVersion": 0.2,
-      "withMetadata": true,
-      "generateId": true,
-      "populateJsonWithId": true,
-      "ginIndex": [
-        {
-          "fieldName": "title",
-          "tOps": "ADD",
-          "caseSensitive": false,
-          "removeAccents": true
-        }
-      ]
-    },
-    {
       "tableName": "location",
       "withMetadata": true,
       "pkColumnName": "id",
@@ -30,6 +15,42 @@
       "index": [
         {
           "fieldName": "id",
+          "tOps": "ADD"
+        }
+      ]
+    },
+    {
+      "tableName": "resource",
+      "fromModuleVersion": 0.2,
+      "withMetadata": true,
+      "generateId": true,
+      "populateJsonWithId": true,
+      "index": [
+        {
+          "fieldName": "locationId",
+          "tOps": "ADD",
+          "caseSensitive": false,
+          "removeAccents": true
+        }
+      ],
+      "ginIndex": [
+        {
+          "fieldName": "title",
+          "tOps": "ADD",
+          "caseSensitive": false,
+          "removeAccents": true
+        },
+        {
+          "fieldName": "locationId",
+          "tOps": "ADD",
+          "caseSensitive": false,
+          "removeAccents": true
+        }
+      ],
+      "foreignKeys": [
+        {
+          "fieldName": "locationId",
+          "targetTable": "location",
           "tOps": "ADD"
         }
       ]
