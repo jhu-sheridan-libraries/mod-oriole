@@ -2,11 +2,11 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "type": "object",
   "properties": {
-    "locations": {
+    "libraries": {
       "type": "array",
       "items": {
         "type": "object",
-        "$ref": "location.json"
+        "$ref": "library.json"
       }
     },
     "totalRecords": {
@@ -14,7 +14,7 @@
     }
   },
   "required": [
-    "locations",
+    "libraries",
     "totalRecords"
   ]
 }

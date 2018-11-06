@@ -1,7 +1,7 @@
 {
   "tables": [
     {
-      "tableName": "location",
+      "tableName": "library",
       "withMetadata": true,
       "pkColumnName": "id",
       "generateId": false,
@@ -27,7 +27,7 @@
       "populateJsonWithId": true,
       "index": [
         {
-          "fieldName": "locationId",
+          "fieldName": "libraryId",
           "tOps": "ADD",
           "caseSensitive": false,
           "removeAccents": true
@@ -41,7 +41,7 @@
           "removeAccents": true
         },
         {
-          "fieldName": "locationId",
+          "fieldName": "libraryId",
           "tOps": "ADD",
           "caseSensitive": false,
           "removeAccents": true
@@ -49,8 +49,8 @@
       ],
       "foreignKeys": [
         {
-          "fieldName": "locationId",
-          "targetTable": "location",
+          "fieldName": "libraryId",
+          "targetTable": "library",
           "tOps": "ADD"
         }
       ]

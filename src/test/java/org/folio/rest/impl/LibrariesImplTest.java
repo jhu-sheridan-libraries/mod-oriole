@@ -27,8 +27,8 @@ import static com.jayway.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 
 @RunWith(VertxUnitRunner.class)
-public class LocationsImplTest {
-    private static final Logger LOGGER = LoggerFactory.getLogger(LocationsImplTest.class);
+public class LibrariesImplTest {
+    private static final Logger LOGGER = LoggerFactory.getLogger(LibrariesImplTest.class);
     private static final String LS = System.lineSeparator();
     private static Vertx vertx;
     private static Async async;
@@ -41,7 +41,7 @@ public class LocationsImplTest {
     private final Header TENANT_HEADER = new Header("X-Okapi-Tenant", TENANT);
     private final Header JSON = new Header("Content-Type", "application/json");
 
-    private final String location = "{"
+    private final String library = "{"
             + "\"id\" : \"11111111-1111-1111-a111-111111111111\"," + LS
             + "\"name\" : \"welch\"" + LS
             + "}";
@@ -67,7 +67,7 @@ public class LocationsImplTest {
                 new JsonObject().put("http.port", port).put(HttpClientMock2.MOCK_MODE, "true"));
         vertx.deployVerticle(RestVerticle.class.getName(), options, context.asyncAssertSuccess());
         RestAssured.port = port;
-        LOGGER.info("locationsTest: setup done. Using port " + port);
+        LOGGER.info("librariesTest: setup done. Using port " + port);
     }
 
     @After
@@ -88,7 +88,7 @@ public class LocationsImplTest {
     @Test
     public void testGetWithoutTenant() {
         // Simple GET request without a tanant
-        given().get("/oriole-locations")
+        given().get("/oriole-libraries")
                 .then()
                 .log()
                 .ifValidationFails()
@@ -111,8 +111,8 @@ public class LocationsImplTest {
         // Post
         given().header(TENANT_HEADER)
                 .header(JSON)
-                .body(location)
-                .post("/oriole-locations")
+                .body(library)
+                .post("/oriole-libraries")
                 .then()
                 .log()
                 .ifValidationFails()
@@ -120,7 +120,7 @@ public class LocationsImplTest {
 
         // Fetch the posted resource
         given().header(TENANT_HEADER)
-                .get("/oriole-locations")
+                .get("/oriole-libraries")
                 .then()
                 .log()
                 .ifValidationFails()

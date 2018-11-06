@@ -8,9 +8,9 @@ import org.folio.okapi.common.Failure;
 import org.folio.okapi.common.Success;
 import org.folio.rest.RestVerticle;
 import org.folio.rest.jaxrs.model.Errors;
-import org.folio.rest.jaxrs.model.Location;
-import org.folio.rest.jaxrs.model.LocationCollection;
-import org.folio.rest.jaxrs.resource.OrioleLocations;
+import org.folio.rest.jaxrs.model.Library;
+import org.folio.rest.jaxrs.model.LibraryCollection;
+import org.folio.rest.jaxrs.resource.OrioleLibraries;
 import org.folio.rest.persist.Criteria.Criteria;
 import org.folio.rest.persist.Criteria.Criterion;
 import org.folio.rest.persist.Criteria.Limit;
@@ -36,27 +36,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class LocationsImpl implements OrioleLocations {
-    private static final Logger LOGGER = LoggerFactory.getLogger(LocationsImpl.class);
-    public static final String LOCATIONS_TABLE = "location";
+public class LibrariesImpl implements OrioleLibraries {
+    private static final Logger LOGGER = LoggerFactory.getLogger(LibrariesImpl.class);
+    public static final String LIBRARY_TABLE = "library";
     private static final String ID_FIELD_NAME = "id";
-    private static final String LOCATION_SCHEMA_NAME = "ramls/schemas/location.json";
-    private static final String LOCATION_PREFIX = "/oriole-locations/";
-    private String LOCATION_SCHEMA = null;
+    private static final String LIBRARY_SCHEMA_NAME = "ramls/schemas/library.json";
+    private static final String LIBRARY_PREFIX = "/oriole-libraries/";
+    private String LIBRARY_SCHEMA = null;
     private final Messages messages = Messages.getInstance();
 
-    public LocationsImpl(Vertx vertx, String tennantId) {
-        if (LOCATION_SCHEMA == null) {
+    public LibrariesImpl(Vertx vertx, String tennantId) {
+        if (LIBRARY_SCHEMA == null) {
             initCQLValidation();
         }
         PostgresClient.getInstance(vertx, tennantId).setIdField(ID_FIELD_NAME);
     }
 
     private void initCQLValidation() {
-        String path = LOCATION_SCHEMA_NAME;
+        String path = LIBRARY_SCHEMA_NAME;
         try {
             InputStream is = getClass().getClassLoader().getResourceAsStream(path);
-            LOCATION_SCHEMA = IOUtils.toString(is, "UTF-8");
+            LIBRARY_SCHEMA = IOUtils.toString(is, "UTF-8");
         } catch (Exception e) {
             LOGGER.error("Unable to load schema - " + path
                     + ", validation of query fields will not be active");
@@ -64,7 +64,7 @@ public class LocationsImpl implements OrioleLocations {
     }
 
     @Override
-    public void getOrioleLocations(
+    public void getOrioleLibraries(
             String query,
             int offset,
             int limit,
@@ -75,22 +75,22 @@ public class LocationsImpl implements OrioleLocations {
         PostgresClient postgresClient = getPostgresClient(okapiHeaders, vertxContext);
         CQLWrapper cql = null;
         try {
-            cql = getCQL(query, limit, offset, LOCATION_SCHEMA);
+            cql = getCQL(query, limit, offset, LIBRARY_SCHEMA);
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
             asyncResultHandler.handle(Future.failedFuture(e));
             return;
         }
-        postgresClient.get(LOCATIONS_TABLE, Location.class, new String[] {"*"}, cql, true, false,
+        postgresClient.get(LIBRARY_TABLE, Library.class, new String[] {"*"}, cql, true, false,
                 reply -> {
             if (reply.succeeded()) {
-                LocationCollection locations = new LocationCollection();
-                List<Location> locationList = reply.result().getResults();
-                locations.setLocations(locationList);
+                LibraryCollection libraries = new LibraryCollection();
+                List<Library> libraryList = reply.result().getResults();
+                libraries.setLibraries(libraryList);
                 Integer total = reply.result().getResultInfo().getTotalRecords();
-                locations.setTotalRecords(total);
+                libraries.setTotalRecords(total);
                 asyncResultHandler.handle(
-                        Future.succeededFuture(GetOrioleLocationsResponse.respond200WithApplicationJson(locations)));
+                        Future.succeededFuture(GetOrioleLibrariesResponse.respond200WithApplicationJson(libraries)));
             } else {
                 ValidationHelper.handleError(reply.cause(), asyncResultHandler);
             }
@@ -98,9 +98,9 @@ public class LocationsImpl implements OrioleLocations {
     }
 
     @Override
-    public void postOrioleLocations(
+    public void postOrioleLibraries(
             String lang,
-            Location entity,
+            Library entity,
             Map<String, String> okapiHeaders,
             Handler<AsyncResult<Response>> asyncResultHandler,
             Context vertxContext) {
@@ -110,16 +110,16 @@ public class LocationsImpl implements OrioleLocations {
         }
         PostgresClient postgresClient = getPostgresClient(okapiHeaders, vertxContext);
         vertxContext.runOnContext(v ->
-                postgresClient.save(LOCATIONS_TABLE, id, entity, reply -> {
+                postgresClient.save(LIBRARY_TABLE, id, entity, reply -> {
                     if (reply.succeeded()) {
                         Object ret = reply.result();
                         entity.setId((String) ret);
                         OutStream stream = new OutStream();
                         stream.setData(entity);
-                        PostOrioleLocationsResponse.HeadersFor201 headers =
-                                PostOrioleLocationsResponse.headersFor201().withLocation(LOCATION_PREFIX + ret);
+                        PostOrioleLibrariesResponse.HeadersFor201 headers =
+                                PostOrioleLibrariesResponse.headersFor201().withLocation(LIBRARY_PREFIX + ret);
                         asyncResultHandler.handle(Future.succeededFuture(
-                                PostOrioleLocationsResponse.respond201WithApplicationJson(stream, headers)));
+                                PostOrioleLibrariesResponse.respond201WithApplicationJson(stream, headers)));
                     } else {
                         ValidationHelper.handleError(reply.cause(), asyncResultHandler);
                     }
@@ -127,7 +127,7 @@ public class LocationsImpl implements OrioleLocations {
     }
 
     @Override
-    public void deleteOrioleLocations(
+    public void deleteOrioleLibraries(
             String lang,
             Map<String, String> okapiHeaders,
             Handler<AsyncResult<Response>> asyncResultHandler,
@@ -136,13 +136,13 @@ public class LocationsImpl implements OrioleLocations {
         try {
             vertxContext.runOnContext(v -> {
                 PostgresClient postgresClient = getPostgresClient(okapiHeaders, vertxContext);
-                postgresClient.mutate(String.format("DELETE FROM %s_%s.%s", tennantId, "mod_oriole", LOCATIONS_TABLE),
+                postgresClient.mutate(String.format("DELETE FROM %s_%s.%s", tennantId, "mod_oriole", LIBRARY_TABLE),
                         reply -> {
                     if (reply.succeeded()) {
-                        asyncResultHandler.handle(Future.succeededFuture(DeleteOrioleLocationsResponse.noContent().build()));
+                        asyncResultHandler.handle(Future.succeededFuture(DeleteOrioleLibrariesResponse.noContent().build()));
                     } else {
                         asyncResultHandler.handle(Future.succeededFuture(
-                                DeleteOrioleLocationsResponse.respond500WithTextPlain(reply.cause().getMessage())));
+                                DeleteOrioleLibrariesResponse.respond500WithTextPlain(reply.cause().getMessage())));
                     }
                 });
             });
@@ -152,28 +152,28 @@ public class LocationsImpl implements OrioleLocations {
     }
 
     @Override
-    public void getOrioleLocationsByLocationId(
-            String locationId,
+    public void getOrioleLibrariesByLibraryId(
+            String libraryId,
             String lang,
             Map<String, String> okapiHeaders,
             Handler<AsyncResult<Response>> asyncResultHandler,
             Context vertxContext) {
-        if (locationId.equals("_self")) {
+        if (libraryId.equals("_self")) {
             return;
         }
-        getOneLocation(locationId, okapiHeaders, vertxContext, res -> {
+        getOneLibrary(libraryId, okapiHeaders, vertxContext, res -> {
             if (res.succeeded()) {
                 asyncResultHandler.handle(Future.succeededFuture(
-                        GetOrioleLocationsByLocationIdResponse.respond200WithApplicationJson(res.result())));
+                        GetOrioleLibrariesByLibraryIdResponse.respond200WithApplicationJson(res.result())));
             } else {
                 switch (res.getType()) {
                     case NOT_FOUND:
                         asyncResultHandler.handle(Future.succeededFuture(
-                                GetOrioleLocationsByLocationIdResponse.respond404WithTextPlain(res.cause().getMessage())));
+                                GetOrioleLibrariesByLibraryIdResponse.respond404WithTextPlain(res.cause().getMessage())));
                         break;
                     case USER:
                         asyncResultHandler.handle(Future.succeededFuture(
-                                GetOrioleLocationsByLocationIdResponse.respond400WithTextPlain(res.cause().getMessage())));
+                                GetOrioleLibrariesByLibraryIdResponse.respond400WithTextPlain(res.cause().getMessage())));
                         break;
                     default:
                         ValidationHelper.handleError(res.cause(), asyncResultHandler);
@@ -183,22 +183,22 @@ public class LocationsImpl implements OrioleLocations {
     }
 
     @Override
-    public void deleteOrioleLocationsByLocationId(
-            String locationId,
+    public void deleteOrioleLibrariesByLibraryId(
+            String libraryId,
             String lang,
             Map<String, String> okapiHeaders,
             Handler<AsyncResult<Response>> asyncResultHandler,
             Context vertxContext) {
-        getOneLocation(locationId, okapiHeaders, vertxContext, res -> {
+        getOneLibrary(libraryId, okapiHeaders, vertxContext, res -> {
             if (res.succeeded()) {
-                getPostgresClient(okapiHeaders, vertxContext).delete(LOCATIONS_TABLE, locationId, reply -> {
+                getPostgresClient(okapiHeaders, vertxContext).delete(LIBRARY_TABLE, libraryId, reply -> {
                     if (reply.succeeded()) {
                         if (reply.result().getUpdated() == 1) {
-                            asyncResultHandler.handle(Future.succeededFuture(DeleteOrioleLocationsByLocationIdResponse.respond204()));
+                            asyncResultHandler.handle(Future.succeededFuture(DeleteOrioleLibrariesByLibraryIdResponse.respond204()));
                         } else {
                             LOGGER.error(messages.getMessage(lang, MessageConsts.DeletedCountError, 1,
                                     reply.result().getUpdated()));
-                            asyncResultHandler.handle(Future.succeededFuture(DeleteOrioleLocationsByLocationIdResponse.
+                            asyncResultHandler.handle(Future.succeededFuture(DeleteOrioleLibrariesByLibraryIdResponse.
                                     respond404WithTextPlain(messages.getMessage(lang, MessageConsts.DeletedCountError,
                                             1, reply.result().getUpdated()))));
                         }
@@ -209,11 +209,11 @@ public class LocationsImpl implements OrioleLocations {
             } else {
                 switch (res.getType()) {
                     case NOT_FOUND:
-                        asyncResultHandler.handle(Future.succeededFuture(DeleteOrioleLocationsByLocationIdResponse
+                        asyncResultHandler.handle(Future.succeededFuture(DeleteOrioleLibrariesByLibraryIdResponse
                                 .respond404WithTextPlain(res.cause().getMessage())));
                         break;
                     case USER:
-                        asyncResultHandler.handle(Future.succeededFuture(DeleteOrioleLocationsByLocationIdResponse
+                        asyncResultHandler.handle(Future.succeededFuture(DeleteOrioleLibrariesByLibraryIdResponse
                                 .respond400WithTextPlain(res.cause().getMessage())));
                         break;
                     default:
@@ -225,34 +225,34 @@ public class LocationsImpl implements OrioleLocations {
     }
 
     @Override
-    public void putOrioleLocationsByLocationId(
-            String locationId,
+    public void putOrioleLibrariesByLibraryId(
+            String libraryId,
             String lang,
-            Location entity,
+            Library entity,
             Map<String, String> okapiHeaders,
             Handler<AsyncResult<Response>> asyncResultHandler,
             Context vertxContext) {
         if (entity.getId() == null) {
-            entity.setId(locationId);
-            LOGGER.debug("No ID in the location. Take the one from the link");
+            entity.setId(libraryId);
+            LOGGER.debug("No ID in the library. Take the one from the link");
         }
-        if (!entity.getId().equals(locationId)) {
+        if (!entity.getId().equals(libraryId)) {
             Errors valErr = ValidationHelper.createValidationErrorMessage("id", entity.getId(), "Can't change Id");
-            asyncResultHandler.handle(Future.succeededFuture(PutOrioleLocationsByLocationIdResponse.respond422WithApplicationJson(valErr)));
+            asyncResultHandler.handle(Future.succeededFuture(PutOrioleLibrariesByLibraryIdResponse.respond422WithApplicationJson(valErr)));
             return;
         }
-        getOneLocation(locationId, okapiHeaders, vertxContext, res -> {
+        getOneLibrary(libraryId, okapiHeaders, vertxContext, res -> {
             if (res.succeeded()) {
-                Location oldLocation = res.result();
-                getPostgresClient(okapiHeaders, vertxContext).update(LOCATIONS_TABLE, entity, locationId, reply -> {
+                Library oldLibrary = res.result();
+                getPostgresClient(okapiHeaders, vertxContext).update(LIBRARY_TABLE, entity, libraryId, reply -> {
                     if (reply.succeeded()) {
                         if (reply.result().getUpdated() == 0) {
                             asyncResultHandler.handle(Future.succeededFuture(
-                                    PutOrioleLocationsByLocationIdResponse.respond500WithTextPlain(
+                                    PutOrioleLibrariesByLibraryIdResponse.respond500WithTextPlain(
                                             messages.getMessage(lang, MessageConsts.NoRecordsUpdated))));
                         } else {
                             asyncResultHandler.handle(Future.succeededFuture(
-                                    PutOrioleLocationsByLocationIdResponse.respond204()));
+                                    PutOrioleLibrariesByLibraryIdResponse.respond204()));
                         }
                     } else {
                         ValidationHelper.handleError(reply.cause(), asyncResultHandler);
@@ -261,11 +261,11 @@ public class LocationsImpl implements OrioleLocations {
             } else {
                 switch (res.getType()) {
                     case NOT_FOUND:
-                        asyncResultHandler.handle(Future.succeededFuture(PutOrioleLocationsByLocationIdResponse
+                        asyncResultHandler.handle(Future.succeededFuture(PutOrioleLibrariesByLibraryIdResponse
                                 .respond404WithTextPlain(res.cause().getMessage())));
                         break;
                     case USER: // bad request
-                        asyncResultHandler.handle(Future.succeededFuture(PutOrioleLocationsByLocationIdResponse
+                        asyncResultHandler.handle(Future.succeededFuture(PutOrioleLibrariesByLibraryIdResponse
                                 .respond400WithTextPlain(res.cause().getMessage())));
                         break;
                     default: // typically INTERNAL
@@ -284,10 +284,10 @@ public class LocationsImpl implements OrioleLocations {
             throws IOException, FieldException, SchemaException {
         CQL2PgJSON cql2pgJson = null;
         if (schema != null) {
-            cql2pgJson = new CQL2PgJSON(LOCATIONS_TABLE + ".jsonb", schema);
+            cql2pgJson = new CQL2PgJSON(LIBRARY_TABLE + ".jsonb", schema);
             //cql2pgJson = new CQL2PgJSON(RESOURCE_TABLE + ".jsonb");
         } else {
-            cql2pgJson = new CQL2PgJSON(LOCATIONS_TABLE + ".jsonb");
+            cql2pgJson = new CQL2PgJSON(LIBRARY_TABLE + ".jsonb");
         }
         return new CQLWrapper(cql2pgJson, query)
                 .setLimit(new Limit(limit))
@@ -295,28 +295,28 @@ public class LocationsImpl implements OrioleLocations {
     }
 
     /**
-     * Helper to get a location. Fetches the record from database.
-     * @param locationId
+     * Helper to get a library. Fetches the record from database.
+     * @param libraryId
      * @param okapiHeaders
      * @param context
-     * @param resp a callback that returns the location, or an error
+     * @param resp a callback that returns the library, or an error
      */
-    private void getOneLocation(
-            String locationId,
+    private void getOneLibrary(
+            String libraryId,
             Map<String, String> okapiHeaders,
             Context context,
-            Handler<ExtendedAsyncResult<Location>> resp) {
+            Handler<ExtendedAsyncResult<Library>> resp) {
         Criterion c = new Criterion(
-                new Criteria().addField(ID_FIELD_NAME).setJSONB(false).setOperation("=").setValue("'"+locationId+"'"));
-        getPostgresClient(okapiHeaders, context).get(LOCATIONS_TABLE, Location.class, c, true,
+                new Criteria().addField(ID_FIELD_NAME).setJSONB(false).setOperation("=").setValue("'"+libraryId+"'"));
+        getPostgresClient(okapiHeaders, context).get(LIBRARY_TABLE, Library.class, c, true,
                 reply -> {
                     if (reply.succeeded()) {
-                        List<Location> Locations = (List<Location>)reply.result().getResults();
-                        if (Locations.isEmpty()) {
+                        List<Library> Libraries = (List<Library>)reply.result().getResults();
+                        if (Libraries.isEmpty()) {
                             resp.handle(new Failure<>(
-                                    ErrorType.NOT_FOUND, "Location " + locationId + " not found"));
+                                    ErrorType.NOT_FOUND, "Library " + libraryId + " not found"));
                         } else {
-                            Location l = Locations.get(0);
+                            Library l = Libraries.get(0);
                             resp.handle(new Success<>(l));
                         }
                     } else {

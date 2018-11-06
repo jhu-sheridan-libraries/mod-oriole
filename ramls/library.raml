@@ -5,12 +5,12 @@ protocols: [ HTTP, HTTPS ]
 baseUri: http://localhost
 
 documentation:
-  - title: Location API
-    content: This documents the API calls that can be made to query and manage locations of the system
+  - title: Library API
+    content: This documents the API calls that can be made to query and manage libraries of the system
 
 types:
-  location: !include schemas/location.json
-  locationCollection: !include schemas/locations.json
+  library: !include schemas/library.json
+  libraryCollection: !include schemas/libraries.json
   errors: !include raml-util/schemas/errors.schema
 
 traits:
@@ -23,19 +23,19 @@ resourceTypes:
   collection: !include raml-util/rtypes/collection.raml
   collection-item: !include raml-util/rtypes/item-collection.raml
 
-/oriole-locations:
+/oriole-libraries:
   type:
     collection:
-      exampleCollection: !include examples/locations.json
-      exampleItem: !include examples/location.json
-      schemaCollection: locationCollection
-      schemaItem: location
+      exampleCollection: !include examples/libraries.json
+      exampleItem: !include examples/library.json
+      schemaCollection: libraryCollection
+      schemaItem: library
   get:
     is: [
       searchable: {description: "with valid searchable fields", example: "name=aaa"},
       pageable
     ]
-    description: Return a list of locations
+    description: Return a list of libraries
     responses:
       400:
         description: "Bad request"
@@ -46,25 +46,25 @@ resourceTypes:
         body:
           text/plain:
   post:
-    description: Create a new location
+    description: Create a new library
     is: [validate]
   delete:
-    description: "Delete all locations"
+    description: "Delete all libraries"
     is: [language]
     responses:
       204:
-        description: "All locations deleted"
+        description: "All libraries deleted"
       500:
         description: "Internal server error, e.g. due to misconfiguration"
         body:
           text/plain:
             example: "Internal server error, contact administrator"
-  /{locationId}:
-    description: Pass in the location code
+  /{libraryId}:
+    description: Pass in the library code
     type:
       collection-item:
-        exampleItem: !include examples/location.json
-        schema: location
+        exampleItem: !include examples/library.json
+        schema: library
     get:
       is: [ validate ]
       responses:

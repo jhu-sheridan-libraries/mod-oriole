@@ -35,39 +35,39 @@
       ]
     },
     {
-      "id": "oriole-locations",
+      "id": "oriole-libraries",
       "version": "1.0",
       "handlers": [
         {
           "methods": [ "GET" ],
-          "pathPattern": "/oriole-locations",
-          "permissionsRequired": [ "oriole.locations.collection.get" ]
+          "pathPattern": "/oriole-libraries",
+          "permissionsRequired": [ "oriole.libraries.collection.get" ]
         },
         {
           "methods": [ "GET" ],
-          "pathPattern": "/oriole-locations/{id}",
-          "permissionsRequired": [ "oriole.locations.item.get" ]
+          "pathPattern": "/oriole-libraries/{id}",
+          "permissionsRequired": [ "oriole.libraries.item.get" ]
         },
         {
           "methods": [ "POST" ],
-          "pathPattern": "/oriole-locations",
-          "permissionsRequired": [ "oriole.locations.item.post" ]
+          "pathPattern": "/oriole-libraries",
+          "permissionsRequired": [ "oriole.libraries.item.post" ]
         },
         {
           "methods": [ "PUT" ],
-          "pathPattern": "/oriole-locations/{id}",
-          "permissionsRequired": [ "oriole.locations.item.put" ]
+          "pathPattern": "/oriole-libraries/{id}",
+          "permissionsRequired": [ "oriole.libraries.item.put" ]
         },
         {
           "methods": [ "DELETE" ],
-          "pathPattern": "/oriole-locations/{id}",
-          "permissionsRequired": [ "oriole.locations.item.delete" ]
+          "pathPattern": "/oriole-libraries/{id}",
+          "permissionsRequired": [ "oriole.libraries.item.delete" ]
 
         },
         {
           "methods": [ "DELETE" ],
-          "pathPattern": "/oriole-locations",
-          "permissionsRequired": [ "oriole.locations.collection.delete" ]
+          "pathPattern": "/oriole-libraries",
+          "permissionsRequired": [ "oriole.libraries.collection.delete" ]
         }
       ]
     }
@@ -108,50 +108,50 @@
         "oriole.resources.item.post",
         "oriole.resources.item.put",
         "oriole.resources.item.delete",
-        "oriole.locations.collection.delete"
+        "oriole.libraries.collection.delete"
       ],
       "visible": true
     },
     {
-      "permissionName": "oriole.locations.item.post",
-      "displayName": "Oriole locations item add",
+      "permissionName": "oriole.libraries.item.post",
+      "displayName": "Oriole libraries item add",
       "description": "Add a new Oriole Location"
     },
     {
-      "permissionName": "oriole.locations.item.delete",
-      "displayName": "Oriole locations item delete",
+      "permissionName": "oriole.libraries.item.delete",
+      "displayName": "Oriole libraries item delete",
       "description": "Remove a Oriole Location"
     },
     {
-      "permissionName": "oriole.locations.collection.delete",
-      "displayName": "Oriole locations collection delete",
-      "description": "Remove all Oriole locations"
+      "permissionName": "oriole.libraries.collection.delete",
+      "displayName": "Oriole libraries collection delete",
+      "description": "Remove all Oriole libraries"
     },
     {
-      "permissionName": "oriole.locations.item.put",
-      "displayName": "Oriole locations item edit",
+      "permissionName": "oriole.libraries.item.put",
+      "displayName": "Oriole libraries item edit",
       "description": "Edit an Oriole Location"
     },
     {
-      "permissionName": "oriole.locations.collection.get",
-      "displayName": "Oriole locations get",
+      "permissionName": "oriole.libraries.collection.get",
+      "displayName": "Oriole libraries get",
       "description": "Get Oriole Locations"
     },
     {
-      "permissionName": "oriole.locations.item.get",
-      "displayName": "Oriole locations item get",
+      "permissionName": "oriole.libraries.item.get",
+      "displayName": "Oriole libraries item get",
       "description": "Get Oriole Locations"
     },
     {
-      "permissionName": "oriole.locations.admin",
-      "displayName": "Oriole locations admin",
+      "permissionName": "oriole.libraries.admin",
+      "displayName": "Oriole libraries admin",
       "description": "Admin Oriole Locations",
       "subPermissions": [
-        "oriole.locations.item.post",
-        "oriole.locations.item.delete",
-        "oriole.locations.item.put",
-        "oriole.locations.collection.get",
-        "oriole.locations.item.get"
+        "oriole.libraries.item.post",
+        "oriole.libraries.item.delete",
+        "oriole.libraries.item.put",
+        "oriole.libraries.collection.get",
+        "oriole.libraries.item.get"
       ],
       "visible": true
     }
