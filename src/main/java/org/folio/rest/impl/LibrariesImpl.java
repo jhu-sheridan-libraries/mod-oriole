@@ -72,10 +72,10 @@ public class LibrariesImpl implements OrioleLibraries {
             Map<String, String> okapiHeaders,
             Handler<AsyncResult<Response>> asyncResultHandler,
             Context vertxContext) {
-        PostgresClient postgresClient = getPostgresClient(okapiHeaders, vertxContext);
-        CQLWrapper cql = null;
+        PostgresClient postgresClient = ApiUtil.getPostgresClient(okapiHeaders, vertxContext);
+        CQLWrapper cql;
         try {
-            cql = getCQL(query, limit, offset, LIBRARY_SCHEMA);
+            cql = ApiUtil.getCQL(query, limit, offset, LIBRARY_TABLE, LIBRARY_SCHEMA);
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
             asyncResultHandler.handle(Future.failedFuture(e));
@@ -108,7 +108,7 @@ public class LibrariesImpl implements OrioleLibraries {
         if (id == null || id.isEmpty()) {
             entity.setId(UUID.randomUUID().toString());
         }
-        PostgresClient postgresClient = getPostgresClient(okapiHeaders, vertxContext);
+        PostgresClient postgresClient = ApiUtil.getPostgresClient(okapiHeaders, vertxContext);
         vertxContext.runOnContext(v ->
                 postgresClient.save(LIBRARY_TABLE, id, entity, reply -> {
                     if (reply.succeeded()) {
@@ -135,7 +135,7 @@ public class LibrariesImpl implements OrioleLibraries {
         String tennantId = TenantTool.tenantId(okapiHeaders);
         try {
             vertxContext.runOnContext(v -> {
-                PostgresClient postgresClient = getPostgresClient(okapiHeaders, vertxContext);
+                PostgresClient postgresClient = ApiUtil.getPostgresClient(okapiHeaders, vertxContext);
                 postgresClient.mutate(String.format("DELETE FROM %s_%s.%s", tennantId, "mod_oriole", LIBRARY_TABLE),
                         reply -> {
                     if (reply.succeeded()) {
@@ -191,7 +191,7 @@ public class LibrariesImpl implements OrioleLibraries {
             Context vertxContext) {
         getOneLibrary(libraryId, okapiHeaders, vertxContext, res -> {
             if (res.succeeded()) {
-                getPostgresClient(okapiHeaders, vertxContext).delete(LIBRARY_TABLE, libraryId, reply -> {
+                ApiUtil.getPostgresClient(okapiHeaders, vertxContext).delete(LIBRARY_TABLE, libraryId, reply -> {
                     if (reply.succeeded()) {
                         if (reply.result().getUpdated() == 1) {
                             asyncResultHandler.handle(Future.succeededFuture(DeleteOrioleLibrariesByLibraryIdResponse.respond204()));
@@ -244,7 +244,7 @@ public class LibrariesImpl implements OrioleLibraries {
         getOneLibrary(libraryId, okapiHeaders, vertxContext, res -> {
             if (res.succeeded()) {
                 Library oldLibrary = res.result();
-                getPostgresClient(okapiHeaders, vertxContext).update(LIBRARY_TABLE, entity, libraryId, reply -> {
+                ApiUtil.getPostgresClient(okapiHeaders, vertxContext).update(LIBRARY_TABLE, entity, libraryId, reply -> {
                     if (reply.succeeded()) {
                         if (reply.result().getUpdated() == 0) {
                             asyncResultHandler.handle(Future.succeededFuture(
@@ -275,25 +275,6 @@ public class LibrariesImpl implements OrioleLibraries {
         });
     }
 
-    private static PostgresClient getPostgresClient(Map<String, String> okapiHeaders, Context vertxContext) {
-        String tenantId = TenantTool.calculateTenantId(okapiHeaders.get(RestVerticle.OKAPI_HEADER_TENANT));
-        return PostgresClient.getInstance(vertxContext.owner(), tenantId);
-    }
-
-    private CQLWrapper getCQL(String query, int limit, int offset, String schema)
-            throws IOException, FieldException, SchemaException {
-        CQL2PgJSON cql2pgJson = null;
-        if (schema != null) {
-            cql2pgJson = new CQL2PgJSON(LIBRARY_TABLE + ".jsonb", schema);
-            //cql2pgJson = new CQL2PgJSON(RESOURCE_TABLE + ".jsonb");
-        } else {
-            cql2pgJson = new CQL2PgJSON(LIBRARY_TABLE + ".jsonb");
-        }
-        return new CQLWrapper(cql2pgJson, query)
-                .setLimit(new Limit(limit))
-                .setOffset(new Offset(offset));
-    }
-
     /**
      * Helper to get a library. Fetches the record from database.
      * @param libraryId
@@ -308,7 +289,7 @@ public class LibrariesImpl implements OrioleLibraries {
             Handler<ExtendedAsyncResult<Library>> resp) {
         Criterion c = new Criterion(
                 new Criteria().addField(ID_FIELD_NAME).setJSONB(false).setOperation("=").setValue("'"+libraryId+"'"));
-        getPostgresClient(okapiHeaders, context).get(LIBRARY_TABLE, Library.class, c, true,
+        ApiUtil.getPostgresClient(okapiHeaders, context).get(LIBRARY_TABLE, Library.class, c, true,
                 reply -> {
                     if (reply.succeeded()) {
                         List<Library> Libraries = (List<Library>)reply.result().getResults();

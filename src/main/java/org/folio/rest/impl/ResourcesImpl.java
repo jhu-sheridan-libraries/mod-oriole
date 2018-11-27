@@ -72,10 +72,10 @@ public class ResourcesImpl implements OrioleResources {
             Map<String, String> okapiHeaders,
             Handler<AsyncResult<Response>> asyncResultHandler,
             Context vertxContext) {
-        PostgresClient postgresClient = getPostgresClient(okapiHeaders, vertxContext);
-        CQLWrapper cql = null;
+        PostgresClient postgresClient = ApiUtil.getPostgresClient(okapiHeaders, vertxContext);
+        CQLWrapper cql;
         try {
-            cql = getCQL(query, limit, offset, RESOURCE_SCHEMA);
+            cql = ApiUtil.getCQL(query, limit, offset, RESOURCE_TABLE, RESOURCE_SCHEMA);
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
             asyncResultHandler.handle(Future.failedFuture(e));
@@ -299,17 +299,4 @@ public class ResourcesImpl implements OrioleResources {
         return PostgresClient.getInstance(vertxContext.owner(), tenantId);
     }
 
-    private CQLWrapper getCQL(String query, int limit, int offset, String schema)
-            throws IOException, FieldException, SchemaException {
-        CQL2PgJSON cql2pgJson = null;
-        if (schema != null) {
-            cql2pgJson = new CQL2PgJSON(RESOURCE_TABLE + ".jsonb", schema);
-            //cql2pgJson = new CQL2PgJSON(RESOURCE_TABLE + ".jsonb");
-        } else {
-            cql2pgJson = new CQL2PgJSON(RESOURCE_TABLE + ".jsonb");
-        }
-        return new CQLWrapper(cql2pgJson, query)
-                .setLimit(new Limit(limit))
-                .setOffset(new Offset(offset));
-    }
 }

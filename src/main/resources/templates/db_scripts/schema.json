@@ -4,7 +4,7 @@
       "tableName": "library",
       "withMetadata": true,
       "pkColumnName": "id",
-      "generateId": false,
+      "generateId": true,
       "withAuditing": false,
       "uniqueIndex": [
         {
@@ -20,11 +20,11 @@
       ]
     },
     {
-      "tableName": "resource",
-      "fromModuleVersion": 0.2,
+      "tableName": "subject",
       "withMetadata": true,
+      "pkColumnName": "id",
       "generateId": true,
-      "populateJsonWithId": true,
+      "withAuditing": false,
       "index": [
         {
           "fieldName": "libraryId",
@@ -35,7 +35,7 @@
       ],
       "ginIndex": [
         {
-          "fieldName": "title",
+          "fieldName": "name",
           "tOps": "ADD",
           "caseSensitive": false,
           "removeAccents": true
@@ -51,6 +51,42 @@
         {
           "fieldName": "libraryId",
           "targetTable": "library",
+          "tOps": "ADD"
+        }
+      ]
+    },
+    {
+      "tableName": "resource",
+      "fromModuleVersion": 0.2,
+      "withMetadata": true,
+      "generateId": true,
+      "populateJsonWithId": true,
+      "index": [
+        {
+          "fieldName": "subjectId",
+          "tOps": "ADD",
+          "caseSensitive": false,
+          "removeAccents": true
+        }
+      ],
+      "ginIndex": [
+        {
+          "fieldName": "title",
+          "tOps": "ADD",
+          "caseSensitive": false,
+          "removeAccents": true
+        },
+        {
+          "fieldName": "subjectId",
+          "tOps": "ADD",
+          "caseSensitive": false,
+          "removeAccents": true
+        }
+      ],
+      "foreignKeys": [
+        {
+          "fieldName": "subjectId",
+          "targetTable": "subject",
           "tOps": "ADD"
         }
       ]

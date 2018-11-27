@@ -8,13 +8,11 @@
       "handlers": [
         {
           "methods": [ "GET" ],
-          "pathPattern": "/oriole-resources",
-          "permissionsRequired": [ "oriole.resources.collection.get" ]
+          "pathPattern": "/oriole-resources"
         },
         {
           "methods": ["GET"],
-          "pathPattern": "/oriole-resources/{id}",
-          "permissionsRequired": [ "oriole.resources.item.get" ]
+          "pathPattern": "/oriole-resources/{id}"
         },
         {
           "methods": [ "POST" ],
@@ -70,6 +68,43 @@
           "permissionsRequired": [ "oriole.libraries.collection.delete" ]
         }
       ]
+    },
+    {
+      "id": "oriole-subjects",
+      "version": "1.0",
+      "handlers": [
+        {
+          "methods": [ "GET" ],
+          "pathPattern": "/oriole-subjects",
+          "permissionsRequired": [ "oriole.subjects.collection.get" ]
+        },
+        {
+          "methods": [ "GET" ],
+          "pathPattern": "/oriole-subjects/{id}",
+          "permissionsRequired": [ "oriole.subjects.item.get" ]
+        },
+        {
+          "methods": [ "POST" ],
+          "pathPattern": "/oriole-subjects",
+          "permissionsRequired": [ "oriole.subjects.item.post" ]
+        },
+        {
+          "methods": [ "PUT" ],
+          "pathPattern": "/oriole-subjects/{id}",
+          "permissionsRequired": [ "oriole.subjects.item.put" ]
+        },
+        {
+          "methods": [ "DELETE" ],
+          "pathPattern": "/oriole-subjects/{id}",
+          "permissionsRequired": [ "oriole.subjects.item.delete" ]
+
+        },
+        {
+          "methods": [ "DELETE" ],
+          "pathPattern": "/oriole-subjects",
+          "permissionsRequired": [ "oriole.subjects.collection.delete" ]
+        }
+      ]
     }
   ],
   "permissionSets": [
@@ -115,12 +150,12 @@
     {
       "permissionName": "oriole.libraries.item.post",
       "displayName": "Oriole libraries item add",
-      "description": "Add a new Oriole Location"
+      "description": "Add a new Oriole library"
     },
     {
       "permissionName": "oriole.libraries.item.delete",
       "displayName": "Oriole libraries item delete",
-      "description": "Remove a Oriole Location"
+      "description": "Remove a Oriole library"
     },
     {
       "permissionName": "oriole.libraries.collection.delete",
@@ -130,28 +165,71 @@
     {
       "permissionName": "oriole.libraries.item.put",
       "displayName": "Oriole libraries item edit",
-      "description": "Edit an Oriole Location"
+      "description": "Edit an Oriole library"
     },
     {
       "permissionName": "oriole.libraries.collection.get",
       "displayName": "Oriole libraries get",
-      "description": "Get Oriole Locations"
+      "description": "Get Oriole libraries"
     },
     {
       "permissionName": "oriole.libraries.item.get",
       "displayName": "Oriole libraries item get",
-      "description": "Get Oriole Locations"
+      "description": "Get Oriole libraries"
     },
     {
       "permissionName": "oriole.libraries.admin",
       "displayName": "Oriole libraries admin",
-      "description": "Admin Oriole Locations",
+      "description": "Admin Oriole libraries",
       "subPermissions": [
         "oriole.libraries.item.post",
         "oriole.libraries.item.delete",
         "oriole.libraries.item.put",
         "oriole.libraries.collection.get",
         "oriole.libraries.item.get"
+      ],
+      "visible": true
+    },
+    {
+      "permissionName": "oriole.subjects.item.post",
+      "displayName": "Oriole subjects item add",
+      "description": "Add a new Oriole subject"
+    },
+    {
+      "permissionName": "oriole.subjects.item.delete",
+      "displayName": "Oriole subjects item delete",
+      "description": "Remove a Oriole subject"
+    },
+    {
+      "permissionName": "oriole.subjects.collection.delete",
+      "displayName": "Oriole subjects collection delete",
+      "description": "Remove all Oriole subjects"
+    },
+    {
+      "permissionName": "oriole.subjects.item.put",
+      "displayName": "Oriole subjects item edit",
+      "description": "Edit an Oriole subject"
+    },
+    {
+      "permissionName": "oriole.subjects.collection.get",
+      "displayName": "Oriole subjects get",
+      "description": "Get Oriole subjects"
+    },
+    {
+      "permissionName": "oriole.subjects.item.get",
+      "displayName": "Oriole subjects item get",
+      "description": "Get Oriole subjects"
+    },
+    {
+      "permissionName": "oriole.subjects.admin",
+      "displayName": "Oriole subjects admin",
+      "description": "Admin Oriole subjects",
+      "subPermissions": [
+        "oriole.subjects.item.post",
+        "oriole.subjects.item.delete",
+        "oriole.subjects.item.put",
+        "oriole.subjects.collection.get",
+        "oriole.subjects.item.get"
       ],
       "visible": true
     }
