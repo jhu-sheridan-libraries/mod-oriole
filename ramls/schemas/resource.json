@@ -35,6 +35,9 @@
       "example": "johndoe17",
       "readonly": true
     },
+    "jhuId": {
+      "type": "string"
+    },
     "type": {
       "type": "string",
       "description": "content type of the resource",
@@ -68,11 +71,11 @@
         "properties": {
           "value": {
             "type": "string",
-            "description": "identifier type : e.g. ISSN"
+            "description": "identifier value"
           },
           "type": {
             "type": "string",
-            "description": "identifier value"
+            "description": "identifier type : e.g. ISSN"
           }
         }
       },
@@ -82,6 +85,36 @@
     },
     "libraryId": {
       "type": "string"
+    },
+    "subjects": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "uniqueItems": true
+      }
+    },
+//    "subjects": {
+//      "type": "array",
+//      "items": {
+//        "type": "object",
+//        "additionalProperties": false,
+//        "properties": {
+//          "subjectId": {
+//            "type": "string",
+//            "description": "FAST term identifier"
+//          },
+//          "core": {
+//            "type": "boolean",
+//            "description": "Whether the database is a core database for the term"
+//          }
+//        }
+//      },
+//      "additionalItems": true,
+//      "uniqueItems": true,
+//      "description": "an extensible set of name-value pairs of identifiers associated with the resource"
+//    },
+    "isCore": {
+      "type": "boolean"
     }
   },
   "required": [

@@ -216,6 +216,11 @@
       "description": "Get Oriole subjects"
     },
     {
+      "permissionName": "oriole.subjects.collection.delete",
+      "displayName": "Oriole subjects get",
+      "description": "Get Oriole subjects"
+    },
+    {
       "permissionName": "oriole.subjects.item.get",
       "displayName": "Oriole subjects item get",
       "description": "Get Oriole subjects"
@@ -229,6 +234,7 @@
         "oriole.subjects.item.delete",
         "oriole.subjects.item.put",
         "oriole.subjects.collection.get",
+        "oriole.subjects.collection.delete",
         "oriole.subjects.item.get"
       ],
       "visible": true

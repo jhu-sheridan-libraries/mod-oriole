@@ -5,40 +5,32 @@
     "id": {
       "type": "string"
     },
-    "name": {
+    "fastId": {
       "type": "string"
     },
-    "notes": {
+    "term": {
+      "type": "string"
+    },
+    "facet": {
+      "type": "string"
+    },
+    "uri": {
+      "type": "string"
+    },
+    "core": {
       "type": "array",
       "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "value": {
-            "type": "string",
-            "description": "a note"
-          },
-          "libraryId": {
-            "type": "string",
-            "description": "library identifier"
-          }
-        }
-      },
-      "additionalItems": true,
-      "uniqueItems": true,
-      "description": "an extensible set of notes by libraries"
-
-    },
-    "metadata": {
-      "type": "object",
-      "$ref": "../raml-util/schemas/metadata.schema",
-      "readonly": true
+        "type": "string",
+        "uniqueItems": true
+      }
     }
   },
   "additionalProperties": false,
   "required": [
     "id",
-    "name",
-    "libraryId"
+    "fastId",
+    "term",
+    "facet",
+    "uri"
   ]
 }

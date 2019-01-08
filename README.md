@@ -365,6 +365,12 @@ We need to run the following step manually.
 curl -D - -w '\n' -H "X-Okapi-Tenant: diku" -H "Content-Type: application/json"   -X POST -d '{"module_to": "mod-oriole-1.0-SNAPSHOT"}'   http://localhost:8081/_/tenant
 ```
 
+Add permissions
+
+```
+python3 scripts/add-permissions.py 
+```
+
 
 
 

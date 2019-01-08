@@ -43,7 +43,10 @@ public class SubjectsImplTest {
 
     private final String subject = "{"
             + "\"id\" : \"11111111-1111-1111-a111-111111111111\"," + LS
-            + "\"name\" : \"Biochemistry\"" + LS
+            + "\"fastId\" : \"fst00798293\"," + LS
+            + "\"term\" : \"Aeronautics\"," + LS
+            + "\"facet\" : \"Topical\"," + LS
+            + "\"uri\" : \"http://id.worldcat.org/fast/798293\"" + LS
             + "}";
 
     @Before
@@ -125,7 +128,7 @@ public class SubjectsImplTest {
                 .log()
                 .ifValidationFails()
                 .statusCode(200)
-                .body(containsString("Biochemistry"))
+                .body(containsString("Aeronautics"))
                 .body(containsString("\"totalRecords\" : 1"));
     }
 }
