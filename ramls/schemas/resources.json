@@ -12,6 +12,10 @@
     },
     "totalRecords": {
       "type": "integer"
+    },
+    "resultInfo": {
+      "type": "object",
+      "$ref": "../raml-util/schemas/resultInfo.schema"
     }
   },
   "required": [

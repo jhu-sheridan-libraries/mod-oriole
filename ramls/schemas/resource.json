@@ -89,7 +89,8 @@
     "subjects": {
       "type": "array",
       "items": {
-        "type": "string",
+        "type": "object",
+        "$ref": "subject.json",
         "uniqueItems": true
       }
     },

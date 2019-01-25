@@ -81,6 +81,12 @@
           "tOps": "ADD",
           "caseSensitive": false,
           "removeAccents": true
+        },
+        {
+          "fieldName": "subjects",
+          "tOps": "ADD",
+          "caseSensitive": false,
+          "removeAccents": true
         }
       ],
       "foreignKeys": [
