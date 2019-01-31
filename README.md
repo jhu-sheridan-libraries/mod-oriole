@@ -77,7 +77,7 @@ java -jar target/mod-oriole-fat.jar db_connection=/tmp/postgres-conf.json
 Try the following and you should get a 401 response. 
 
 ```bash 
-curl -D - -w '\n' -H "X-Okapi-Tenant: test"  http://localhost:8081/resources
+curl -D - -w '\n' -H "X-Okapi-Tenant: test"  http://localhost:8081/oriole-resources
 ```
 
 The output would be like: 
@@ -105,7 +105,7 @@ First you need to initialize the module. This will create a database table for t
 Future CRUD operations from the same tenant will be based on that database table. 
 
 ```bash 
-curl -D - -w '\n' -H "X-Okapi-Tenant: test" -H "Content-Type: application/json" \
+curl -D - -w '\n' -H "X-Okapi-Tenant: diku" -H "Content-Type: application/json" \
   -X POST -d '{"module_to": "mod-oriole-1.0"}' \
   http://localhost:8081/_/tenant 
 ```
@@ -118,7 +118,7 @@ Content-Type: application/json
 host: localhost:8081
 user-agent: curl/7.54.0
 accept: */*
-x-okapi-tenant: test
+x-okapi-tenant: diku
 content-length: 31
 Transfer-Encoding: chunked
 
@@ -130,7 +130,7 @@ Transfer-Encoding: chunked
 To fetch the resources, use this command: 
 
 ```bash 
-curl -D - -w '\n' -H "X-Okapi-Tenant: test"  http://localhost:8081/resources
+curl -D - -w '\n' -H "X-Okapi-Tenant: diku"  http://localhost:8081/oriole-resources
 ```
 
 The results would be: 
@@ -141,7 +141,7 @@ Content-Type: application/json
 host: localhost:8081
 user-agent: curl/7.54.0
 accept: */*
-x-okapi-tenant: test
+x-okapi-tenant: diku
 Transfer-Encoding: chunked
 
 {

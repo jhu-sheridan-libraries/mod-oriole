@@ -16,6 +16,8 @@ import org.folio.rest.persist.Criteria.Criterion;
 import org.folio.rest.persist.PgExceptionUtil;
 import org.folio.rest.persist.PostgresClient;
 import org.folio.rest.persist.cql.CQLWrapper;
+import org.folio.rest.persist.facets.FacetField;
+import org.folio.rest.persist.facets.FacetManager;
 import org.folio.rest.tools.messages.MessageConsts;
 import org.folio.rest.tools.messages.Messages;
 import org.folio.rest.tools.utils.OutStream;
@@ -62,6 +64,7 @@ public class ResourcesImpl implements OrioleResources {
             String query,
             int offset,
             int limit,
+            List<String> facets,
             String lang,
             Map<String, String> okapiHeaders,
             Handler<AsyncResult<Response>> asyncResultHandler,
@@ -75,14 +78,16 @@ public class ResourcesImpl implements OrioleResources {
             asyncResultHandler.handle(Future.failedFuture(e));
             return;
         }
+        List<FacetField> facetList = FacetManager.convertFacetStrings2FacetFields(facets, "jsonb");
         postgresClient.get(RESOURCE_TABLE, Resource.class, new String[] {"*"}, cql, true, false,
-                reply -> {
+                facetList, reply -> {
             if (reply.succeeded()) {
                 ResourceCollection resources = new ResourceCollection();
                 List<Resource> resourceList = reply.result().getResults();
                 resources.setResources(resourceList);
                 Integer total = reply.result().getResultInfo().getTotalRecords();
                 resources.setTotalRecords(total);
+                resources.setResultInfo(reply.result().getResultInfo());
                 asyncResultHandler.handle(
                         Future.succeededFuture(GetOrioleResourcesResponse.respond200WithApplicationJson(resources)));
             } else {
