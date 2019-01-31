@@ -372,5 +372,8 @@ python3 scripts/add-permissions.py
 ```
 
 
-
+docker build --no-cache --rm --tag=farooqsadiq/mod-oriole:1.0.2 --tag=farooqsadiq/mod-oriole:latest .
+docker images | grep mod-oriole
+docker push farooqsadiq/mod-oriole:1.0.2
+docker push farooqsadiq/mod-oriole:latest
 
