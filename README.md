@@ -312,13 +312,14 @@ Content-Length: 0
 Build the docker image locally
 
 ```bash 
-docker build -t dockerusername/oriole:version . 
+docker build -t jhulibraries/mod-oriole:latest -t jhulibraries/mod-oriole:1.0.2 .
 ```
 
 Push the new image to docker hub
 
 ```bash
-docker push dockerusername/oriole 
+docker push jhulibraries/mod-oriole:latest
+docker push jhulibraries/mod-oriole:1.0.2
 ```
 
 ## Build on Vagrant Virtual Box
