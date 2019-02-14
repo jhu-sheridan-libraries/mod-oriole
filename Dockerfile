@@ -1,12 +1,14 @@
 FROM openjdk:8-jre
 
 ENV VERTICLE_FILE mod-oriole-fat.jar
+ENV MODULE_DESCRIPTOR_FILE ModuleDescriptor.json
 
 # Set the location of the verticles
 ENV VERTICLE_HOME /usr/verticles
 
 # Copy your fat jar to the container
 COPY target/$VERTICLE_FILE $VERTICLE_HOME/module.jar
+COPY target/$MODULE_DESCRIPTOR_FILE $VERTICLE_HOME/
 COPY docker/docker-entrypoint.sh $VERTICLE_HOME/docker-entrypoint.sh
 
 # Create user/group 'folio'

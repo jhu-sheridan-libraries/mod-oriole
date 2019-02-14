@@ -25,6 +25,10 @@
       "type": "string",
       "description": "name of publisher of the resource"
     },
+    "creator": {
+      "type": "string",
+      "description": "name of the creator of the resource"
+    },
     "description": {
       "type": "string",
       "description": "an introduction of the resource"
@@ -37,31 +41,6 @@
     },
     "jhuId": {
       "type": "string"
-    },
-    "type": {
-      "type": "string",
-      "description": "content type of the resource",
-      "enum": [
-        "audio",
-        "audiobooks",
-        "databases",
-        "ebooks",
-        "handbooks",
-        "maps",
-        "music",
-        "newspapers",
-        "newsletters",
-        "patents",
-        "periodicals",
-        "posters",
-        "proceedings",
-        "reports",
-        "standards",
-        "thesisanddissertation",
-        "unspecified",
-        "video",
-        "webresources"
-      ]
     },
     "identifier": {
       "type": "array",
@@ -93,29 +72,6 @@
         "$ref": "subject.json",
         "uniqueItems": true
       }
-    },
-//    "subjects": {
-//      "type": "array",
-//      "items": {
-//        "type": "object",
-//        "additionalProperties": false,
-//        "properties": {
-//          "subjectId": {
-//            "type": "string",
-//            "description": "FAST term identifier"
-//          },
-//          "core": {
-//            "type": "boolean",
-//            "description": "Whether the database is a core database for the term"
-//          }
-//        }
-//      },
-//      "additionalItems": true,
-//      "uniqueItems": true,
-//      "description": "an extensible set of name-value pairs of identifiers associated with the resource"
-//    },
-    "isCore": {
-      "type": "boolean"
     }
   },
   "required": [
