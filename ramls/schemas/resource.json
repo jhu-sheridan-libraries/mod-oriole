@@ -65,11 +65,22 @@
     "libraryId": {
       "type": "string"
     },
-    "subjects": {
+    "terms": {
       "type": "array",
       "items": {
         "type": "object",
-        "$ref": "subject.json",
+        "properties": {
+          "subject": {
+            "type": "object",
+            "$ref": "subject.json"
+          },
+          "category": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number"
+          }
+        },
         "uniqueItems": true
       }
     }

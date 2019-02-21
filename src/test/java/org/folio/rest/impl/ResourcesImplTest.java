@@ -46,7 +46,6 @@ public class ResourcesImplTest {
             + "\"id\" : \"11111111-1111-1111-a111-111111111111\"," + LS
             + "\"title\" : \"PubMed\"," + LS
             + "\"url\" : \"https://www.ncbi.nlm.nih.gov/pubmed/\"," + LS
-            + "\"type\": \"databases\"," + LS
             + "\"description\" : \"PubMed is a free search engine accessing primarily the MEDLINE database of references and abstracts on life sciences and biomedical topics.\"}" + LS;
 
 
@@ -211,16 +210,6 @@ public class ResourcesImplTest {
                 .log().ifValidationFails()
                 .statusCode(422)
                 .body(containsString("Unrecognized field"));
-
-        String badTypeDoc = resource.replaceFirst("databases", "UnknownType");
-        given().header(TENANT_HEADER)
-                .header(JSON)
-                .body(badTypeDoc)
-                .post("/oriole-resources")
-                .then()
-                .log().ifValidationFails()
-                .statusCode(400)
-                .body(containsString("problem: UnknownType"));
     }
 
     @Test
@@ -403,7 +392,6 @@ public class ResourcesImplTest {
                 + "\"id\" : \"11111111-1111-1111-a111-111111111111\"," + LS
                 + "\"title\" : \"PubMed\"," + LS
                 + "\"url\" : \"https://www.ncbi.nlm.nih.gov/pubmed/\"," + LS
-                + "\"type\": \"databases\"," + LS
                 + "\"description\" : \"PubMed lists journal articles and more back to 1947.\"}" + LS;
 
         // ID doesn't match
@@ -489,6 +477,71 @@ public class ResourcesImplTest {
                 .statusCode(422)
                 .body(containsString("is not present in index"));
 
+    }
+
+    @Test
+    public void testSubjectAndFacet(TestContext context) {
+        // initialize tenant
+        String tenants = "{\"module_to\":\"" + moduleId + "\"}";
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(tenants)
+                .post("/_/tenant")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(201);
+
+        String resource = "{"
+                + "\"id\" : \"11111111-1111-1111-a111-111111111111\"," + LS
+                + "\"title\" : \"PubMed\"," + LS
+                + "\"url\" : \"https://www.ncbi.nlm.nih.gov/pubmed/\"," + LS
+                + "\"description\" : \"PubMed is a free search engine accessing primarily the MEDLINE database of references and abstracts on life sciences and biomedical topics.\"," + LS
+                + "\"terms\" : [{\"subject\": {\"id\": \"5711b80f-9e72-4d5c-9414-e98b454d61fa\", \"fastId\": \"fst01692913\", \"term\": \"Video recordings\", \"uri\": \"http://id.worldcat.org/fast/1692913\", \"facet\": \"Form\"}, \"category\": \"none\", \"score\": 1}]}" + LS;
+
+        // Post
+        given().header(TENANT_HEADER)
+                .header(JSON)
+                .body(resource)
+                .post("/oriole-resources")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(201);
+        // Search
+        given().header(TENANT_HEADER)
+                .get("/oriole-resources?query=title=PubMed")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(200)
+                .body(containsString("free search engine"))
+                .body(containsString("id"));
+        // Facet
+        given().header(TENANT_HEADER)
+                .get("/oriole-resources?facets=active&facets=terms[].subject.term")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(200)
+                .body(containsString("facetValues"))
+                .body(containsString("\"count\" : 1"))
+                .body(containsString("\"value\" : \"Video recordings\""));
+        // Facet search
+        String query = "*\\\"facet\\\": \\\"Form\\\"*";
+        given().header(TENANT_HEADER)
+                .get("/oriole-resources?facets=active&facets=terms[].subject.term&query=terms==\"" + query + "\"")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(200)
+                .body(containsString("facetValues"))
+                .body(containsString("\"totalRecords\" : 1"))
+                .body(containsString("\"value\" : \"Video recordings\""));
+        query = "*\\\"facet\\\": \\\"Topical\\\"*";
+        given().header(TENANT_HEADER)
+                .get("/oriole-resources?facets=active&facets=terms[].subject.term&query=terms==\"" + query + "\"")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(200)
+                .body(containsString("\"totalRecords\" : 0"));
     }
 }
 

@@ -16,13 +16,6 @@
     },
     "uri": {
       "type": "string"
-    },
-    "core": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "uniqueItems": true
-      }
     }
   },
   "additionalProperties": false,

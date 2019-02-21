@@ -107,6 +107,8 @@ public class ResourcesImpl implements OrioleResources {
         if (id == null || id.isEmpty()) {
             entity.setId(UUID.randomUUID().toString());
         }
+
+        // extract subjects and store it in the join table
         PostgresClient postgresClient = getPostgresClient(okapiHeaders, vertxContext);
         vertxContext.runOnContext(v ->
                 postgresClient.save(RESOURCE_TABLE, id, entity, reply -> {

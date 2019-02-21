@@ -48,7 +48,7 @@ psql postgres
 Create role and database
 
 ```
-CREATE ROLE folio WITH PASSWORD 'folio123' LOGIN SUPERUSER;
+CREATE ROLE folio WITH PASSWORD 'folio' LOGIN SUPERUSER;
 CREATE DATABASE folio WITH OWNER folio;
 ```
 

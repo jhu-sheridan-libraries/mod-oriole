@@ -25,33 +25,13 @@
       "pkColumnName": "id",
       "generateId": true,
       "withAuditing": false,
-      "index": [
-        {
-          "fieldName": "libraryId",
-          "tOps": "ADD",
-          "caseSensitive": false,
-          "removeAccents": true
-        }
-      ],
+      "index": [],
       "ginIndex": [
         {
           "fieldName": "name",
           "tOps": "ADD",
           "caseSensitive": false,
           "removeAccents": true
-        },
-        {
-          "fieldName": "libraryId",
-          "tOps": "ADD",
-          "caseSensitive": false,
-          "removeAccents": true
-        }
-      ],
-      "foreignKeys": [
-        {
-          "fieldName": "libraryId",
-          "targetTable": "library",
-          "tOps": "ADD"
         }
       ]
     },
@@ -62,12 +42,6 @@
       "generateId": true,
       "populateJsonWithId": true,
       "index": [
-        {
-          "fieldName": "subjectId",
-          "tOps": "ADD",
-          "caseSensitive": false,
-          "removeAccents": true
-        }
       ],
       "ginIndex": [
         {
@@ -77,23 +51,10 @@
           "removeAccents": true
         },
         {
-          "fieldName": "subjectId",
+          "fieldName": "terms",
           "tOps": "ADD",
           "caseSensitive": false,
           "removeAccents": true
-        },
-        {
-          "fieldName": "subjects",
-          "tOps": "ADD",
-          "caseSensitive": false,
-          "removeAccents": true
-        }
-      ],
-      "foreignKeys": [
-        {
-          "fieldName": "subjectId",
-          "targetTable": "subject",
-          "tOps": "ADD"
         }
       ]
     }
