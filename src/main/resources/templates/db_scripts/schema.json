@@ -55,8 +55,15 @@
           "tOps": "ADD",
           "caseSensitive": false,
           "removeAccents": true
+        },
+        {
+          "fieldName": "terms.subject.term",
+          "tOps": "ADD",
+          "caseSensitive": false,
+          "removeAccents": true
         }
-      ]
+      ],
+      "customSnippetPath": "resource.sql"
     }
   ]
 }
