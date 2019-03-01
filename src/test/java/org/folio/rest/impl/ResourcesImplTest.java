@@ -542,6 +542,12 @@ public class ResourcesImplTest {
                 .log().ifValidationFails()
                 .statusCode(200)
                 .body(containsString("\"totalRecords\" : 0"));
+//        given().header(TENANT_HEADER)
+//                .get("/oriole-resources?facets=active&facets=terms[].subject.term&query=terms.subject.term==\"*recordings*\"")
+//                .then()
+//                .log().ifValidationFails()
+//                .statusCode(200)
+//                .body(containsString("\"totalRecords\" : 1"));
     }
 }
 

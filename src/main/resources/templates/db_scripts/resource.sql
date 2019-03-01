@@ -46,14 +46,18 @@ $$ LANGUAGE plpgsql IMMUTABLE ;
 
 alter function diku_mod_oriole.combine_keyword_element(input jsonb) owner to folio;
 
-ALTER TABLE diku_mod_oriole.resource ADD column keywords tsvector;
-create index idx_keyword_full_text on diku_mod_oriole.resource using gin(keywords);
+-- ALTER TABLE diku_mod_oriole.resource ADD column keywords tsvector;
+-- create index idx_keyword_full_text on diku_mod_oriole.resource using gin(keywords);
 
 create function diku_mod_oriole.resource_set_keywords()
   returns trigger
 as $$
+DECLARE
+  keywords text;
 BEGIN
-  NEW.keywords = to_tsvector('english', diku_mod_oriole.combine_keyword_element(NEW.jsonb));
+--   NEW.keywords = to_tsvector('english', diku_mod_oriole.combine_keyword_element(NEW.jsonb));
+  keywords = replace(diku_mod_oriole.combine_keyword_element(NEW.jsonb), '"', ' ');
+  NEW.jsonb = jsonb_set(NEW.jsonb, '{keywords}', concat('"', keywords, '"')::jsonb, true);
 --   NEW.keywords = to_tsvector('English', NEW.jsonb::text);
   RETURN NEW;
 END;

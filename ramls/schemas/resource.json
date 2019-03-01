@@ -39,9 +39,6 @@
       "example": "johndoe17",
       "readonly": true
     },
-    "jhuId": {
-      "type": "string"
-    },
     "identifier": {
       "type": "array",
       "items": {
@@ -83,6 +80,10 @@
         },
         "uniqueItems": true
       }
+    },
+    "keywords": {
+      "type": "string",
+      "readonly": true
     }
   },
   "required": [
