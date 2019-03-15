@@ -84,6 +84,10 @@
     "keywords": {
       "type": "string",
       "readonly": true
+    },
+    "tags": {
+      "type" : "object",
+      "$ref" : "../raml-util/schemas/tags.schema"
     }
   },
   "required": [

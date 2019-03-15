@@ -34,3 +34,7 @@ mod-oriole.iml
 # jenv
 .java-version
 
+# derived raml files
+src/main/resources
+!src/main/resources/templates.db_scripts
+
