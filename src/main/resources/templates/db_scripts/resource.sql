@@ -61,7 +61,7 @@ CREATE OR REPLACE FUNCTION ${myuniversity}_${mymodule}.combine_keyword_element(i
 DECLARE
   keywords text;
 BEGIN
-  select string_agg(txt, ' ') into keywords from ${myuniversity}_${mymodule}.extract_keyword_element(input) as txt;
+  select string_agg(txt, ' ') into keywords from ${myuniversity}_${mymodule}.extract_text_elements(input) as txt;
   return keywords;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE ;
