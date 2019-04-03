@@ -93,4 +93,10 @@ create trigger set_resource_keywords_trigger
   for each row
 execute procedure resource_set_keywords();
 
+-- Create a view of all tags
+CREATE OR REPLACE VIEW ${myuniversity}_${mymodule}.tag_view AS
+SELECT distinct jsonb_array_elements_text(resource.jsonb->'tags'->'tagList') tag
+from ${myuniversity}_${mymodule}.resource;
+GRANT SELECT ON ${myuniversity}_${mymodule}.tag_view TO ${myuniversity}_${mymodule};
+
 

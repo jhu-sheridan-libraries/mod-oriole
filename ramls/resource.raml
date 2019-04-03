@@ -11,6 +11,11 @@ types:
   resource: !include schemas/resource.json
   resourceCollection: !include schemas/resources.json
   errors: !include raml-util/schemas/errors.schema
+  tagCollection:
+    type: object
+    properties:
+      tags:
+        type: string[]
 
 traits:
   orderable: !include raml-util/traits/orderable.raml
@@ -84,6 +89,19 @@ resourceTypes:
           description: "Not authorized to perform requested action"
           body:
             text/plain:
+
+/oriole-tags:
+  displayName: Tags
+  description: Get all tags
+  get:
+    responses:
+      200:
+        body:
+          application/json:
+            type: tagCollection
+
+
+
 
 
 

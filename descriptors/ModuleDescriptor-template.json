@@ -33,6 +33,17 @@
       ]
     },
     {
+      "id": "oriole-tags",
+      "version": "1.0",
+      "handlers": [
+        {
+          "methods": [ "GET" ],
+          "pathPattern": "/oriole-tags",
+          "permissionsRequired": []
+        }
+      ]
+    },
+    {
       "id": "oriole-libraries",
       "version": "1.0",
       "handlers": [

@@ -1,16 +1,16 @@
 package org.folio.rest.impl;
 
 import io.vertx.core.*;
+import io.vertx.core.json.JsonArray;
 import org.apache.commons.io.IOUtils;
 import org.folio.okapi.common.ErrorType;
 import org.folio.okapi.common.ExtendedAsyncResult;
 import org.folio.okapi.common.Failure;
 import org.folio.okapi.common.Success;
 import org.folio.rest.RestVerticle;
-import org.folio.rest.jaxrs.model.Errors;
-import org.folio.rest.jaxrs.model.Resource;
-import org.folio.rest.jaxrs.model.ResourceCollection;
+import org.folio.rest.jaxrs.model.*;
 import org.folio.rest.jaxrs.resource.OrioleResources;
+import org.folio.rest.jaxrs.resource.OrioleTags;
 import org.folio.rest.persist.Criteria.Criteria;
 import org.folio.rest.persist.Criteria.Criterion;
 import org.folio.rest.persist.PgExceptionUtil;
@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class ResourcesImpl implements OrioleResources {
+public class ResourcesImpl implements OrioleResources, OrioleTags {
     private static final Logger LOGGER = LoggerFactory.getLogger(ResourcesImpl.class);
     public static final String RESOURCE_TABLE = "resource";
     private static final String ID_FIELD_NAME = "id";
@@ -261,6 +261,55 @@ public class ResourcesImpl implements OrioleResources {
         });
     }
 
+    @Override
+    public void getOrioleTags(
+            Map<String, String> okapiHeaders,
+            Handler<AsyncResult<Response>> asyncResultHandler,
+            Context vertxContext) {
+//        PostgresClient postgresClient = ApiUtil.getPostgresClient(okapiHeaders, vertxContext);
+//        CQLWrapper cql;
+//        try {
+//            cql = ApiUtil.getCQL("", 1000, 0, "tag_view", null);
+//        } catch (Exception e) {
+//            LOGGER.error(e.getMessage());
+//            asyncResultHandler.handle(Future.failedFuture(e));
+//            return;
+//        }
+//        postgresClient.get("tag_view", String.class, new String[] {"*"}, cql, true, false,
+//                null, reply -> {
+//                    if (reply.succeeded()) {
+//                        TagCollection tags = new TagCollectionImpl();
+//                        List<String> resourceList = reply.result().getResults();
+//                        tags.setTags(resourceList);
+//                        asyncResultHandler.handle(
+//                                Future.succeededFuture(GetOrioleTagsResponse.respond200WithApplicationJson(tags)));
+//                    } else {
+//                        ValidationHelper.handleError(reply.cause(), asyncResultHandler);
+//                    }
+//                });
+
+        vertxContext.runOnContext(v -> {
+            PostgresClient client = ApiUtil.getPostgresClient(okapiHeaders, vertxContext);
+            String sql = "SELECT tag FROM tag_view ORDER BY tag";
+            client.select(sql, (reply) -> {
+                if (reply.succeeded()) {
+                    TagCollection tagCollection = new TagCollectionImpl();
+                    List<JsonArray> results = reply.result().getResults();
+                    List<String> tags = new ArrayList<>();
+                    for (JsonArray result: results) {
+                        tags.add(result.getString(0));
+                    }
+                    tagCollection.setTags(tags);
+                    asyncResultHandler.handle(
+                            Future.succeededFuture(GetOrioleTagsResponse.respond200WithApplicationJson(tagCollection)));
+                } else {
+                    ValidationHelper.handleError(reply.cause(), asyncResultHandler);
+                }
+            });
+        });
+    }
+
+
     /**
      * Helper to get a resource. Fetches the record from database.
      * @param resourceId
@@ -303,5 +352,4 @@ public class ResourcesImpl implements OrioleResources {
         String tenantId = TenantTool.calculateTenantId(okapiHeaders.get(RestVerticle.OKAPI_HEADER_TENANT));
         return PostgresClient.getInstance(vertxContext.owner(), tenantId);
     }
-
 }

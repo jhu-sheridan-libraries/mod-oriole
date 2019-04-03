@@ -29,6 +29,7 @@ public class ApiUtil {
                 .setOffset(new Offset(offset));
     }
 
+
     public static PostgresClient getPostgresClient(Map<String, String> okapiHeaders, Context vertxContext) {
         String tenantId = TenantTool.calculateTenantId(okapiHeaders.get(RestVerticle.OKAPI_HEADER_TENANT));
         return PostgresClient.getInstance(vertxContext.owner(), tenantId);
