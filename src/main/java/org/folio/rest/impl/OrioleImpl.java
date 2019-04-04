@@ -9,8 +9,7 @@ import org.folio.okapi.common.Failure;
 import org.folio.okapi.common.Success;
 import org.folio.rest.RestVerticle;
 import org.folio.rest.jaxrs.model.*;
-import org.folio.rest.jaxrs.resource.OrioleResources;
-import org.folio.rest.jaxrs.resource.OrioleTags;
+import org.folio.rest.jaxrs.resource.Oriole;
 import org.folio.rest.persist.Criteria.Criteria;
 import org.folio.rest.persist.Criteria.Criterion;
 import org.folio.rest.persist.PgExceptionUtil;
@@ -33,29 +32,40 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class ResourcesImpl implements OrioleResources, OrioleTags {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ResourcesImpl.class);
+public class OrioleImpl implements Oriole {
+    private static final Logger LOGGER = LoggerFactory.getLogger(OrioleImpl.class);
     public static final String RESOURCE_TABLE = "resource";
+    public static final String SUBJECT_TABLE = "subject";
+    public static final String TAG_VIEW = "tag_view";
     private static final String ID_FIELD_NAME = "id";
-    private static final String RESOURCE_SCHEMA_NAME = "ramls/schemas/resource.json";
-    private static final String LOCATION_PREFIX = "/oriole-resources/";
+    private static final String RESOURCE_SCHEMA_PATH = "ramls/schemas/resource.json";
+    private static final String SUBJECT_SCHEMA_PATH = "ramls/schemas/subject.json";
+    private static final String LOCATION_PREFIX = "/oriole/resources/";
+    private static final String SUBJECT_PREFIX = "/oriole/subjects/";
     private String RESOURCE_SCHEMA = null;
+    private String SUBJECT_SCHEMA = null;
     private final Messages messages = Messages.getInstance();
 
-    public ResourcesImpl(Vertx vertx, String tennantId) {
-        if (RESOURCE_SCHEMA == null) {
+    public OrioleImpl(Vertx vertx, String tennantId) {
+        if (RESOURCE_SCHEMA == null || SUBJECT_SCHEMA == null) {
             initCQLValidation();
         }
         PostgresClient.getInstance(vertx, tennantId).setIdField(ID_FIELD_NAME);
     }
 
     private void initCQLValidation() {
-        String path = RESOURCE_SCHEMA_NAME;
         try {
-            InputStream is = getClass().getClassLoader().getResourceAsStream(path);
-            RESOURCE_SCHEMA = IOUtils.toString(is, "UTF-8");
+            InputStream ris = getClass().getClassLoader().getResourceAsStream(RESOURCE_SCHEMA_PATH);
+            RESOURCE_SCHEMA = IOUtils.toString(ris, "UTF-8");
         } catch (Exception e) {
-            LOGGER.error("Unable to load schema - " + path
+            LOGGER.error("Unable to load schema - " + RESOURCE_SCHEMA_PATH
+                    + ", validation of query fields will not be active");
+        }
+        try {
+            InputStream sis = getClass().getClassLoader().getResourceAsStream(SUBJECT_SCHEMA_PATH);
+            SUBJECT_SCHEMA = IOUtils.toString(sis, "UTF-8");
+        } catch (Exception e) {
+            LOGGER.error("Unable to load schema - " + SUBJECT_SCHEMA_PATH
                     + ", validation of query fields will not be active");
         }
     }
@@ -266,31 +276,9 @@ public class ResourcesImpl implements OrioleResources, OrioleTags {
             Map<String, String> okapiHeaders,
             Handler<AsyncResult<Response>> asyncResultHandler,
             Context vertxContext) {
-//        PostgresClient postgresClient = ApiUtil.getPostgresClient(okapiHeaders, vertxContext);
-//        CQLWrapper cql;
-//        try {
-//            cql = ApiUtil.getCQL("", 1000, 0, "tag_view", null);
-//        } catch (Exception e) {
-//            LOGGER.error(e.getMessage());
-//            asyncResultHandler.handle(Future.failedFuture(e));
-//            return;
-//        }
-//        postgresClient.get("tag_view", String.class, new String[] {"*"}, cql, true, false,
-//                null, reply -> {
-//                    if (reply.succeeded()) {
-//                        TagCollection tags = new TagCollectionImpl();
-//                        List<String> resourceList = reply.result().getResults();
-//                        tags.setTags(resourceList);
-//                        asyncResultHandler.handle(
-//                                Future.succeededFuture(GetOrioleTagsResponse.respond200WithApplicationJson(tags)));
-//                    } else {
-//                        ValidationHelper.handleError(reply.cause(), asyncResultHandler);
-//                    }
-//                });
-
         vertxContext.runOnContext(v -> {
             PostgresClient client = ApiUtil.getPostgresClient(okapiHeaders, vertxContext);
-            String sql = "SELECT tag FROM tag_view ORDER BY tag";
+            String sql = "SELECT tag FROM " + TAG_VIEW + " ORDER BY tag";
             client.select(sql, (reply) -> {
                 if (reply.succeeded()) {
                     TagCollection tagCollection = new TagCollectionImpl();
@@ -307,6 +295,226 @@ public class ResourcesImpl implements OrioleResources, OrioleTags {
                 }
             });
         });
+    }
+
+    @Override
+    public void getOrioleSubjects(String query, int offset, int limit, String lang, Map<String, String> okapiHeaders,
+                                  Handler<AsyncResult<Response>> asyncResultHandler, Context vertxContext) {
+        PostgresClient postgresClient = ApiUtil.getPostgresClient(okapiHeaders, vertxContext);
+        CQLWrapper cql;
+        try {
+            cql = ApiUtil.getCQL(query, limit, offset, SUBJECT_TABLE, SUBJECT_SCHEMA);
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
+            asyncResultHandler.handle(Future.failedFuture(e));
+            return;
+        }
+        postgresClient.get(SUBJECT_TABLE, Subject.class, new String[] {"*"}, cql, true, false,
+                reply -> {
+                    if (reply.succeeded()) {
+                        SubjectCollection subjects = new SubjectCollection();
+                        List<Subject> subjectList = reply.result().getResults();
+                        subjects.setSubjects(subjectList);
+                        Integer total = reply.result().getResultInfo().getTotalRecords();
+                        subjects.setTotalRecords(total);
+                        asyncResultHandler.handle(
+                                Future.succeededFuture(Oriole.GetOrioleSubjectsResponse.respond200WithApplicationJson(subjects)));
+                    } else {
+                        ValidationHelper.handleError(reply.cause(), asyncResultHandler);
+                    }
+                });
+    }
+
+    @Override
+    public void postOrioleSubjects(String lang, Subject entity, Map<String, String> okapiHeaders,
+                                   Handler<AsyncResult<Response>> asyncResultHandler, Context vertxContext) {
+        String id = entity.getId();
+        if (id == null || id.isEmpty()) {
+            entity.setId(UUID.randomUUID().toString());
+        }
+        PostgresClient postgresClient = ApiUtil.getPostgresClient(okapiHeaders, vertxContext);
+        vertxContext.runOnContext(v ->
+                postgresClient.save(SUBJECT_TABLE, id, entity, reply -> {
+                    if (reply.succeeded()) {
+                        Object ret = reply.result();
+                        entity.setId((String) ret);
+                        OutStream stream = new OutStream();
+                        stream.setData(entity);
+                        Oriole.PostOrioleSubjectsResponse.HeadersFor201 headers =
+                                Oriole.PostOrioleSubjectsResponse.headersFor201().withLocation(SUBJECT_PREFIX + ret);
+                        asyncResultHandler.handle(Future.succeededFuture(
+                                Oriole.PostOrioleSubjectsResponse.respond201WithApplicationJson(stream, headers)));
+                    } else {
+                        ValidationHelper.handleError(reply.cause(), asyncResultHandler);
+                    }
+                }));
+    }
+
+    @Override
+    public void deleteOrioleSubjects(String lang, Map<String, String> okapiHeaders, Handler<AsyncResult<Response>> asyncResultHandler, Context vertxContext) {
+        String tennantId = TenantTool.tenantId(okapiHeaders);
+        try {
+            vertxContext.runOnContext(v -> {
+                PostgresClient postgresClient = ApiUtil.getPostgresClient(okapiHeaders, vertxContext);
+                postgresClient.mutate(String.format("DELETE FROM %s_%s.%s", tennantId, "mod_oriole", SUBJECT_TABLE),
+                        reply -> {
+                            if (reply.succeeded()) {
+                                asyncResultHandler.handle(Future.succeededFuture(Oriole.DeleteOrioleSubjectsResponse.noContent().build()));
+                            } else {
+                                asyncResultHandler.handle(Future.succeededFuture(
+                                        Oriole.DeleteOrioleSubjectsResponse.respond500WithTextPlain(reply.cause().getMessage())));
+                            }
+                        });
+            });
+        } catch (Exception e) {
+            asyncResultHandler.handle(Future.failedFuture(e));
+        }
+    }
+
+    @Override
+    public void getOrioleSubjectsBySubjectId(String subjectId, String lang, Map<String, String> okapiHeaders,
+                                             Handler<AsyncResult<Response>> asyncResultHandler, Context vertxContext) {
+        if (subjectId.equals("_self")) {
+            return;
+        }
+        getOneSubject(subjectId, okapiHeaders, vertxContext, res -> {
+            if (res.succeeded()) {
+                asyncResultHandler.handle(Future.succeededFuture(
+                        Oriole.GetOrioleSubjectsBySubjectIdResponse.respond200WithApplicationJson(res.result())));
+            } else {
+                switch (res.getType()) {
+                    case NOT_FOUND:
+                        asyncResultHandler.handle(Future.succeededFuture(
+                                Oriole.GetOrioleSubjectsBySubjectIdResponse.respond404WithTextPlain(res.cause().getMessage())));
+                        break;
+                    case USER:
+                        asyncResultHandler.handle(Future.succeededFuture(
+                                Oriole.GetOrioleSubjectsBySubjectIdResponse.respond400WithTextPlain(res.cause().getMessage())));
+                        break;
+                    default:
+                        ValidationHelper.handleError(res.cause(), asyncResultHandler);
+                }
+            }
+        });
+    }
+
+    @Override
+    public void putOrioleSubjectsBySubjectId(String subjectId, String lang, Subject entity, Map<String, String> okapiHeaders, Handler<AsyncResult<Response>> asyncResultHandler, Context vertxContext) {
+        if (entity.getId() == null) {
+            entity.setId(subjectId);
+            LOGGER.debug("No ID in the Subject. Take the one from the link");
+        }
+        if (!entity.getId().equals(subjectId)) {
+            Errors valErr = ValidationHelper.createValidationErrorMessage("id", entity.getId(), "Can't change Id");
+            asyncResultHandler.handle(Future.succeededFuture(Oriole.PutOrioleSubjectsBySubjectIdResponse.respond422WithApplicationJson(valErr)));
+            return;
+        }
+        getOneSubject(subjectId, okapiHeaders, vertxContext, res -> {
+            if (res.succeeded()) {
+                Subject oldSubject = res.result();
+                ApiUtil.getPostgresClient(okapiHeaders, vertxContext).update(SUBJECT_TABLE, entity, subjectId, reply -> {
+                    if (reply.succeeded()) {
+                        if (reply.result().getUpdated() == 0) {
+                            asyncResultHandler.handle(Future.succeededFuture(
+                                    Oriole.PutOrioleSubjectsBySubjectIdResponse.respond500WithTextPlain(
+                                            messages.getMessage(lang, MessageConsts.NoRecordsUpdated))));
+                        } else {
+                            asyncResultHandler.handle(Future.succeededFuture(
+                                    Oriole.PutOrioleSubjectsBySubjectIdResponse.respond204()));
+                        }
+                    } else {
+                        ValidationHelper.handleError(reply.cause(), asyncResultHandler);
+                    }
+                });
+            } else {
+                switch (res.getType()) {
+                    case NOT_FOUND:
+                        asyncResultHandler.handle(Future.succeededFuture(Oriole.PutOrioleSubjectsBySubjectIdResponse
+                                .respond404WithTextPlain(res.cause().getMessage())));
+                        break;
+                    case USER: // bad request
+                        asyncResultHandler.handle(Future.succeededFuture(Oriole.PutOrioleSubjectsBySubjectIdResponse
+                                .respond400WithTextPlain(res.cause().getMessage())));
+                        break;
+                    default: // typically INTERNAL
+                        ValidationHelper.handleError(res.cause(), asyncResultHandler);
+                }
+            }
+        });
+    }
+
+    @Override
+    public void deleteOrioleSubjectsBySubjectId(String subjectId, String lang, Map<String, String> okapiHeaders, Handler<AsyncResult<Response>> asyncResultHandler, Context vertxContext) {
+        getOneSubject(subjectId, okapiHeaders, vertxContext, res -> {
+            if (res.succeeded()) {
+                ApiUtil.getPostgresClient(okapiHeaders, vertxContext).delete(SUBJECT_TABLE, subjectId, reply -> {
+                    if (reply.succeeded()) {
+                        if (reply.result().getUpdated() == 1) {
+                            asyncResultHandler.handle(Future.succeededFuture(Oriole.DeleteOrioleSubjectsBySubjectIdResponse.respond204()));
+                        } else {
+                            LOGGER.error(messages.getMessage(lang, MessageConsts.DeletedCountError, 1,
+                                    reply.result().getUpdated()));
+                            asyncResultHandler.handle(Future.succeededFuture(Oriole.DeleteOrioleSubjectsBySubjectIdResponse.
+                                    respond404WithTextPlain(messages.getMessage(lang, MessageConsts.DeletedCountError,
+                                            1, reply.result().getUpdated()))));
+                        }
+                    } else {
+                        ValidationHelper.handleError(reply.cause(), asyncResultHandler);
+                    }
+                });
+            } else {
+                switch (res.getType()) {
+                    case NOT_FOUND:
+                        asyncResultHandler.handle(Future.succeededFuture(Oriole.DeleteOrioleSubjectsBySubjectIdResponse
+                                .respond404WithTextPlain(res.cause().getMessage())));
+                        break;
+                    case USER:
+                        asyncResultHandler.handle(Future.succeededFuture(Oriole.DeleteOrioleSubjectsBySubjectIdResponse
+                                .respond400WithTextPlain(res.cause().getMessage())));
+                        break;
+                    default:
+                        ValidationHelper.handleError(res.cause(), asyncResultHandler);
+
+                }
+            }
+        });
+    }
+
+    /**
+     * Helper to get a subject. Fetches the record from database.
+     * @param subjectId
+     * @param okapiHeaders
+     * @param context
+     * @param resp a callback that returns the subject, or an error
+     */
+    private void getOneSubject(
+            String subjectId,
+            Map<String, String> okapiHeaders,
+            Context context,
+            Handler<ExtendedAsyncResult<Subject>> resp) {
+        Criterion c = new Criterion(
+                new Criteria().addField(ID_FIELD_NAME).setJSONB(false).setOperation("=").setValue("'"+subjectId+"'"));
+        ApiUtil.getPostgresClient(okapiHeaders, context).get(SUBJECT_TABLE, Subject.class, c, true,
+                reply -> {
+                    if (reply.succeeded()) {
+                        List<Subject> subjects = (List<Subject>)reply.result().getResults();
+                        if (subjects.isEmpty()) {
+                            resp.handle(new Failure<>(
+                                    ErrorType.NOT_FOUND, "Subject " + subjectId + " not found"));
+                        } else {
+                            Subject l = subjects.get(0);
+                            resp.handle(new Success<>(l));
+                        }
+                    } else {
+                        String error = PgExceptionUtil.badRequestMessage(reply.cause());
+                        if (error == null) {
+                            resp.handle(new Failure<>(ErrorType.INTERNAL, ""));
+                        } else {
+                            resp.handle(new Failure<>(ErrorType.USER, error));
+
+                        }
+                    }
+                });
     }
 
 

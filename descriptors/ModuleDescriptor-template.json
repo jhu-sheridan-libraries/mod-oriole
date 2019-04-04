@@ -3,49 +3,74 @@
   "name": "The ORIOLE module",
   "provides": [
     {
-      "id": "oriole-resources",
-      "version": "1.0",
+      "id": "oriole",
+      "version": "${version}",
       "handlers": [
         {
           "methods": [ "GET" ],
-          "pathPattern": "/oriole-resources"
+          "pathPattern": "/oriole/resources"
         },
         {
           "methods": ["GET"],
-          "pathPattern": "/oriole-resources/{id}"
+          "pathPattern": "/oriole/resources/{id}"
         },
         {
           "methods": [ "POST" ],
-          "pathPattern": "/oriole-resources",
+          "pathPattern": "/oriole/resources",
           "permissionsRequired": [ "oriole.resources.item.post" ]
         },
         {
           "methods": [ "PUT" ],
-          "pathPattern": "/oriole-resources/{id}",
+          "pathPattern": "/oriole/resources/{id}",
           "permissionsRequired": [ "oriole.item.put" ],
           "permissionsRequired": [ "oriole.resources.item.put" ]
         },
         {
           "methods": [ "DELETE" ],
-          "pathPattern": "/oriole-resources/{id}",
+          "pathPattern": "/oriole/resources/{id}",
           "permissionsRequired": [ "oriole.resources.item.delete" ]
-        }
-      ]
-    },
-    {
-      "id": "oriole-tags",
-      "version": "1.0",
-      "handlers": [
+        },
         {
           "methods": [ "GET" ],
-          "pathPattern": "/oriole-tags",
+          "pathPattern": "/oriole/tags",
           "permissionsRequired": []
+        },
+        {
+          "methods": [ "GET" ],
+          "pathPattern": "/oriole/subjects",
+          "permissionsRequired": [ "oriole.subjects.collection.get" ]
+        },
+        {
+          "methods": [ "GET" ],
+          "pathPattern": "/oriole/subjects/{id}",
+          "permissionsRequired": [ "oriole.subjects.item.get" ]
+        },
+        {
+          "methods": [ "POST" ],
+          "pathPattern": "/oriole/subjects",
+          "permissionsRequired": [ "oriole.subjects.item.post" ]
+        },
+        {
+          "methods": [ "PUT" ],
+          "pathPattern": "/oriole/subjects/{id}",
+          "permissionsRequired": [ "oriole.subjects.item.put" ]
+        },
+        {
+          "methods": [ "DELETE" ],
+          "pathPattern": "/oriole/subjects/{id}",
+          "permissionsRequired": [ "oriole.subjects.item.delete" ]
+
+        },
+        {
+          "methods": [ "DELETE" ],
+          "pathPattern": "/oriole/subjects",
+          "permissionsRequired": [ "oriole.subjects.collection.delete" ]
         }
       ]
     },
     {
       "id": "oriole-libraries",
-      "version": "1.0",
+      "version": "${version}",
       "handlers": [
         {
           "methods": [ "GET" ],
@@ -80,43 +105,6 @@
         }
       ]
     },
-    {
-      "id": "oriole-subjects",
-      "version": "1.0",
-      "handlers": [
-        {
-          "methods": [ "GET" ],
-          "pathPattern": "/oriole-subjects",
-          "permissionsRequired": [ "oriole.subjects.collection.get" ]
-        },
-        {
-          "methods": [ "GET" ],
-          "pathPattern": "/oriole-subjects/{id}",
-          "permissionsRequired": [ "oriole.subjects.item.get" ]
-        },
-        {
-          "methods": [ "POST" ],
-          "pathPattern": "/oriole-subjects",
-          "permissionsRequired": [ "oriole.subjects.item.post" ]
-        },
-        {
-          "methods": [ "PUT" ],
-          "pathPattern": "/oriole-subjects/{id}",
-          "permissionsRequired": [ "oriole.subjects.item.put" ]
-        },
-        {
-          "methods": [ "DELETE" ],
-          "pathPattern": "/oriole-subjects/{id}",
-          "permissionsRequired": [ "oriole.subjects.item.delete" ]
-
-        },
-        {
-          "methods": [ "DELETE" ],
-          "pathPattern": "/oriole-subjects",
-          "permissionsRequired": [ "oriole.subjects.collection.delete" ]
-        }
-      ]
-    }
   ],
   "permissionSets": [
     {
