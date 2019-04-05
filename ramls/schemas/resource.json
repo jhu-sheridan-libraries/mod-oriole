@@ -8,6 +8,10 @@
       "type": "string",
       "description": "the system-generated ID of the record within its own system"
     },
+    "altId": {
+      "type": "string",
+      "description": "an alternative unique identifier"
+    },
     "url": {
       "type": "string",
       "description": "Link to the online resource",

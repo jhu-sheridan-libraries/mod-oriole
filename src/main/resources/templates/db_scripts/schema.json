@@ -43,6 +43,12 @@
       "populateJsonWithId": true,
       "index": [
       ],
+      "uniqueIndex": [
+        {
+          "fieldName": "altId",
+          "tOps": "ADD"
+        }
+      ],
       "ginIndex": [
         {
           "fieldName": "title",

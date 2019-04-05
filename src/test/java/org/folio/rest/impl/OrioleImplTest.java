@@ -28,8 +28,8 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 
 @RunWith(VertxUnitRunner.class)
-public class ResourcesImplTest {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ResourcesImplTest.class);
+public class OrioleImplTest {
+    private static final Logger LOGGER = LoggerFactory.getLogger(OrioleImplTest.class);
     private static final String LS = System.lineSeparator();
     private static Vertx vertx;
     private static Async async;
@@ -98,7 +98,7 @@ public class ResourcesImplTest {
     @Test
     public void testGetWithoutTenant() {
         // Simple GET request without a tanant
-        given().get("/oriole-resources")
+        given().get("/oriole/resources")
                 .then()
                 .log()
                 .ifValidationFails()
@@ -112,7 +112,7 @@ public class ResourcesImplTest {
         // we have invoked the tenant interface, so the
         // call will fail (with lots of traces in the log)
         given().header(TENANT_HEADER)
-                .get("/oriole-resources")
+                .get("/oriole/resources")
                 .then()
                 .log()
                 .ifValidationFails()
@@ -148,7 +148,7 @@ public class ResourcesImplTest {
 
         // this should retrieve a blank list
         given().header(TENANT_HEADER)
-                .get("/oriole-resources")
+                .get("/oriole/resources")
                 .then()
                 .log()
                 .ifValidationFails()
@@ -161,7 +161,7 @@ public class ResourcesImplTest {
         String bad1 = "This is not json";
         given().header(TENANT_HEADER) // no content-type header
                 .body(bad1)
-                .post("/oriole-resources")
+                .post("/oriole/resources")
                 .then()
                 .log()
                 .ifValidationFails()
@@ -171,7 +171,7 @@ public class ResourcesImplTest {
         given().header(TENANT_HEADER)
                 .header(JSON)
                 .body(bad1)
-                .post("/oriole-resources")
+                .post("/oriole/resources")
                 .then()
                 .log()
                 .ifValidationFails()
@@ -182,7 +182,7 @@ public class ResourcesImplTest {
         given().header(TENANT_HEADER)
                 .header(JSON)
                 .body(bad2)
-                .post("/oriole-resources")
+                .post("/oriole/resources")
                 .then()
                 .log()
                 .ifValidationFails()
@@ -193,7 +193,7 @@ public class ResourcesImplTest {
         given().header(TENANT_HEADER)
                 .header(JSON)
                 .body(bad3)
-                .post("/oriole-resources")
+                .post("/oriole/resources")
                 .then()
                 .log().ifValidationFails()
                 .statusCode(422)
@@ -205,7 +205,7 @@ public class ResourcesImplTest {
         given().header(TENANT_HEADER)
                 .header(JSON)
                 .body(badfieldDoc)
-                .post("/oriole-resources")
+                .post("/oriole/resources")
                 .then()
                 .log().ifValidationFails()
                 .statusCode(422)
@@ -228,7 +228,7 @@ public class ResourcesImplTest {
                 //.header(USER9)
                 .header(JSON)
                 .body(bad4)
-                .post("/oriole-resources")
+                .post("/oriole/resources")
                 .then()
                 .log().ifValidationFails()
                 .statusCode(422)
@@ -252,7 +252,7 @@ public class ResourcesImplTest {
         given().header(TENANT_HEADER)
                 .header(JSON)
                 .body(resource)
-                .post("/oriole-resources")
+                .post("/oriole/resources")
                 .then()
                 .log()
                 .ifValidationFails()
@@ -260,7 +260,7 @@ public class ResourcesImplTest {
 
         // Fetch the posted resource
         given().header(TENANT_HEADER)
-                .get("/oriole-resources")
+                .get("/oriole/resources")
                 .then()
                 .log()
                 .ifValidationFails()
@@ -285,28 +285,28 @@ public class ResourcesImplTest {
         given().header(TENANT_HEADER)
                 .header(JSON)
                 .body(resource)
-                .post("/oriole-resources")
+                .post("/oriole/resources")
                 .then()
                 .log()
                 .ifValidationFails()
                 .statusCode(201);
 
         given().header(TENANT_HEADER)
-                .get("/oriole-resources/11111111-1111-1111-a111-111111111111")
+                .get("/oriole/resources/11111111-1111-1111-a111-111111111111")
                 .then()
                 .log().ifValidationFails()
                 .statusCode(200)
                 .body(containsString("PubMed"));
 
         given().header(TENANT_HEADER)
-                .get("/oriole-resources/99111111-1111-1111-a111-111111111199")
+                .get("/oriole/resources/99111111-1111-1111-a111-111111111199")
                 .then()
                 .log().ifValidationFails()
                 .statusCode(404)
                 .body(containsString("not found"));
 
         given().header(TENANT_HEADER)
-                .get("/oriole-resources/777")
+                .get("/oriole/resources/777")
                 .then()
                 .log().ifValidationFails()
                 .statusCode(400);
@@ -329,7 +329,7 @@ public class ResourcesImplTest {
         given().header(TENANT_HEADER)
                 .header(JSON)
                 .body(resource)
-                .post("/oriole-resources")
+                .post("/oriole/resources")
                 .then()
                 .log()
                 .ifValidationFails()
@@ -337,28 +337,28 @@ public class ResourcesImplTest {
 
         // A failed delete with bad UUID
         given().header(TENANT_HEADER)
-                .delete("/oriole-resources/11111111-3-1111-333-111111111111")
+                .delete("/oriole/resources/11111111-3-1111-333-111111111111")
                 .then()
                 .log().ifValidationFails()
                 .statusCode(400);
 
         // not found
         given().header(TENANT_HEADER)
-                .delete("/oriole-resources/11111111-2222-3333-a444-555555555555")
+                .delete("/oriole/resources/11111111-2222-3333-a444-555555555555")
                 .then()
                 .log().ifValidationFails()
                 .statusCode(404);
 
         // delete it
         given().header(TENANT_HEADER)
-                .delete("/oriole-resources/11111111-1111-1111-a111-111111111111")
+                .delete("/oriole/resources/11111111-1111-1111-a111-111111111111")
                 .then()
                 .log().ifValidationFails()
                 .statusCode(204);
 
         // No longer there
         given().header(TENANT_HEADER)
-                .delete("/oriole-resources/11111111-1111-1111-a111-111111111111")
+                .delete("/oriole/resources/11111111-1111-1111-a111-111111111111")
                 .then()
                 .log().ifValidationFails()
                 .statusCode(404);
@@ -380,7 +380,7 @@ public class ResourcesImplTest {
         given().header(TENANT_HEADER)
                 .header(JSON)
                 .body(resource)
-                .post("/oriole-resources")
+                .post("/oriole/resources")
                 .then()
                 .log()
                 .ifValidationFails()
@@ -398,7 +398,7 @@ public class ResourcesImplTest {
         given().header(TENANT_HEADER)
                 .header(JSON)
                 .body(updated1)
-                .put("/oriole-resources/22222222-2222-2222-a222-222222222222") // wrong one
+                .put("/oriole/resources/22222222-2222-2222-a222-222222222222") // wrong one
                 .then()
                 .log().ifValidationFails()
                 .statusCode(422)
@@ -408,7 +408,7 @@ public class ResourcesImplTest {
         given().header(TENANT_HEADER)
                 .header(JSON)
                 .body(updated1)
-                .put("/oriole-resources/11111111-222-1111-2-111111111111")
+                .put("/oriole/resources/11111111-222-1111-2-111111111111")
                 .then()
                 .log().ifValidationFails()
                 .statusCode(422);
@@ -417,7 +417,7 @@ public class ResourcesImplTest {
         given().header(TENANT_HEADER)
                 .header(JSON)
                 .body(updated1.replaceAll("1", "3"))
-                .put("/oriole-resources/33333333-3333-3333-a333-333333333333")
+                .put("/oriole/resources/33333333-3333-3333-a333-333333333333")
                 .then()
                 .log().ifValidationFails()
                 .statusCode(404)
@@ -427,7 +427,7 @@ public class ResourcesImplTest {
         given().header(TENANT_HEADER)
                 .header(JSON)
                 .body(updated1)
-                .put("/oriole-resources/11111111-1111-1111-a111-111111111111")
+                .put("/oriole/resources/11111111-1111-1111-a111-111111111111")
                 .then()
                 .log().ifValidationFails()
                 .statusCode(204);
@@ -449,14 +449,14 @@ public class ResourcesImplTest {
         given().header(TENANT_HEADER)
                 .header(JSON)
                 .body(resource)
-                .post("/oriole-resources")
+                .post("/oriole/resources")
                 .then()
                 .log()
                 .ifValidationFails()
                 .statusCode(201);
         // Search
         given().header(TENANT_HEADER)
-                .get("/oriole-resources?query=title=PubMed")
+                .get("/oriole/resources?query=title=PubMed")
                 .then()
                 .log().ifValidationFails()
                 .statusCode(200)
@@ -465,13 +465,13 @@ public class ResourcesImplTest {
 
         // Bad query
         given().header(TENANT_HEADER)
-                .get("/oriole-resources?query=VERYBADQUERY")
+                .get("/oriole/resources?query=VERYBADQUERY")
                 .then()
                 .log().ifValidationFails()
                 .statusCode(422)
                 .body(containsString("no serverChoiceIndexes defined"));
         given().header(TENANT_HEADER)
-                .get("/oriole-resources?query=UNKNOWNFIELD=foobar")
+                .get("/oriole/resources?query=UNKNOWNFIELD=foobar")
                 .then()
                 .log().ifValidationFails()
                 .statusCode(422)
@@ -503,14 +503,14 @@ public class ResourcesImplTest {
         given().header(TENANT_HEADER)
                 .header(JSON)
                 .body(resource)
-                .post("/oriole-resources")
+                .post("/oriole/resources")
                 .then()
                 .log()
                 .ifValidationFails()
                 .statusCode(201);
         // Search
         given().header(TENANT_HEADER)
-                .get("/oriole-resources?query=title=PubMed")
+                .get("/oriole/resources?query=title=PubMed")
                 .then()
                 .log().ifValidationFails()
                 .statusCode(200)
@@ -518,7 +518,7 @@ public class ResourcesImplTest {
                 .body(containsString("id"));
         // Facet
         given().header(TENANT_HEADER)
-                .get("/oriole-resources?facets=active&facets=terms[].subject.term")
+                .get("/oriole/resources?facets=active&facets=terms[].subject.term")
                 .then()
                 .log().ifValidationFails()
                 .statusCode(200)
@@ -528,7 +528,7 @@ public class ResourcesImplTest {
         // Facet search
         String query = "*\\\"facet\\\": \\\"Form\\\"*";
         given().header(TENANT_HEADER)
-                .get("/oriole-resources?facets=active&facets=terms[].subject.term&query=terms==\"" + query + "\"")
+                .get("/oriole/resources?facets=active&facets=terms[].subject.term&query=terms==\"" + query + "\"")
                 .then()
                 .log().ifValidationFails()
                 .statusCode(200)
@@ -537,13 +537,13 @@ public class ResourcesImplTest {
                 .body(containsString("\"value\" : \"Video recordings\""));
         query = "*\\\"facet\\\": \\\"Topical\\\"*";
         given().header(TENANT_HEADER)
-                .get("/oriole-resources?facets=active&facets=terms[].subject.term&query=terms==\"" + query + "\"")
+                .get("/oriole/resources?facets=active&facets=terms[].subject.term&query=terms==\"" + query + "\"")
                 .then()
                 .log().ifValidationFails()
                 .statusCode(200)
                 .body(containsString("\"totalRecords\" : 0"));
 //        given().header(TENANT_HEADER)
-//                .get("/oriole-resources?facets=active&facets=terms[].subject.term&query=terms.subject.term==\"*recordings*\"")
+//                .get("/oriole/resources?facets=active&facets=terms[].subject.term&query=terms.subject.term==\"*recordings*\"")
 //                .then()
 //                .log().ifValidationFails()
 //                .statusCode(200)

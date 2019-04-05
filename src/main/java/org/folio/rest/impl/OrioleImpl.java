@@ -121,24 +121,53 @@ public class OrioleImpl implements Oriole {
         if (id == null || id.isEmpty()) {
             entity.setId(UUID.randomUUID().toString());
         }
+        String altId = entity.getAltId();
+        if (altId == null || altId.isEmpty()) {
+            getLastAltId(okapiHeaders, vertxContext, res -> {
+                if (res.succeeded()) {
+                    String lastAltId = res.result();
+                    entity.setAltId(getNextAltId(lastAltId));
+                    saveResource(entity, okapiHeaders, asyncResultHandler, vertxContext);
+                } else {
 
+                }
+            });
+        } else {
+            saveResource(entity, okapiHeaders, asyncResultHandler, vertxContext);
+        }
+    }
+
+    private void saveResource(Resource entity,
+                              Map<String, String> okapiHeaders,
+                              Handler<AsyncResult<Response>> asyncResultHandler,
+                              Context vertxContext) {
         // extract subjects and store it in the join table
-        PostgresClient postgresClient = getPostgresClient(okapiHeaders, vertxContext);
-        vertxContext.runOnContext(v ->
-                postgresClient.save(RESOURCE_TABLE, id, entity, reply -> {
-                    if (reply.succeeded()) {
-                        Object ret = reply.result();
-                        entity.setId((String) ret);
-                        OutStream stream = new OutStream();
-                        stream.setData(entity);
-                        PostOrioleResourcesResponse.HeadersFor201 headers =
-                                PostOrioleResourcesResponse.headersFor201().withLocation(LOCATION_PREFIX + ret);
-                        asyncResultHandler.handle(Future.succeededFuture(
-                                PostOrioleResourcesResponse.respond201WithApplicationJson(stream, headers)));
-                    } else {
-                        ValidationHelper.handleError(reply.cause(), asyncResultHandler);
-                    }
-                }));
+        String id = entity.getId();
+        vertxContext.runOnContext(
+                v ->
+                        getPostgresClient(okapiHeaders, vertxContext).save(
+                                RESOURCE_TABLE,
+                                id,
+                                entity,
+                                reply -> {
+                                    if (reply.succeeded()) {
+                                        Object ret = reply.result();
+                                        entity.setId((String) ret);
+                                        OutStream stream = new OutStream();
+                                        stream.setData(entity);
+                                        PostOrioleResourcesResponse.HeadersFor201 headers =
+                                                PostOrioleResourcesResponse.headersFor201()
+                                                        .withLocation(LOCATION_PREFIX + ret);
+                                        asyncResultHandler.handle(
+                                                Future.succeededFuture(
+                                                        PostOrioleResourcesResponse
+                                                                .respond201WithApplicationJson(
+                                                                        stream, headers)));
+                                    } else {
+                                        ValidationHelper.handleError(
+                                                reply.cause(), asyncResultHandler);
+                                    }
+                                }));
     }
 
     @Override
@@ -276,7 +305,7 @@ public class OrioleImpl implements Oriole {
             Map<String, String> okapiHeaders,
             Handler<AsyncResult<Response>> asyncResultHandler,
             Context vertxContext) {
-        vertxContext.runOnContext(v -> {
+        vertxContext.runOnContext(v -> {  // TODO: Is this necessary?
             PostgresClient client = ApiUtil.getPostgresClient(okapiHeaders, vertxContext);
             String sql = "SELECT tag FROM " + TAG_VIEW + " ORDER BY tag";
             client.select(sql, (reply) -> {
@@ -555,9 +584,41 @@ public class OrioleImpl implements Oriole {
                 });
     }
 
+    private void getLastAltId(Map<String, String> okapiHeaders, Context context, Handler<ExtendedAsyncResult<String>> resp) {
+        String sql = "SELECT jsonb->>'altId' altId FROM " + RESOURCE_TABLE + " ORDER BY altId DESC LIMIT 1;";
+        getPostgresClient(okapiHeaders, context).select(
+                sql,
+                (reply) -> {
+                    if (reply.succeeded()) {
+                        List<JsonArray> results = reply.result().getResults();
+                        if (results.isEmpty()) {
+                            resp.handle(new Success<>(""));
+                        } else {
+                            JsonArray jsonArray = results.get(0);
+                            String value = jsonArray.getString(0);
+                            resp.handle(new Success<>(value));
+                        }
+                    } else {
+                        String error = PgExceptionUtil.badRequestMessage(reply.cause());
+                        if (error == null) {
+                            resp.handle(new Failure<>(ErrorType.INTERNAL, ""));
+                        } else {
+                            resp.handle(new Failure<>(ErrorType.USER, error));
+                        }
+                    }
+                });
+    }
+
+
+
 
     private static PostgresClient getPostgresClient(Map<String, String> okapiHeaders, Context vertxContext) {
         String tenantId = TenantTool.calculateTenantId(okapiHeaders.get(RestVerticle.OKAPI_HEADER_TENANT));
         return PostgresClient.getInstance(vertxContext.owner(), tenantId);
+    }
+
+    protected String getNextAltId(String lastAltId) {
+        int current = Integer.parseInt(lastAltId.substring(3));
+        return String.format("JHU%05d", current+1);
     }
 }

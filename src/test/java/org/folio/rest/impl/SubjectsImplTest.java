@@ -91,7 +91,7 @@ public class SubjectsImplTest {
     @Test
     public void testGetWithoutTenant() {
         // Simple GET request without a tanant
-        given().get("/oriole-subjects")
+        given().get("/oriole/subjects")
                 .then()
                 .log()
                 .ifValidationFails()
@@ -115,7 +115,7 @@ public class SubjectsImplTest {
         given().header(TENANT_HEADER)
                 .header(JSON)
                 .body(subject)
-                .post("/oriole-subjects")
+                .post("/oriole/subjects")
                 .then()
                 .log()
                 .ifValidationFails()
@@ -123,7 +123,7 @@ public class SubjectsImplTest {
 
         // Fetch the posted resource
         given().header(TENANT_HEADER)
-                .get("/oriole-subjects")
+                .get("/oriole/subjects")
                 .then()
                 .log()
                 .ifValidationFails()
