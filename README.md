@@ -309,18 +309,7 @@ Content-Length: 0
 
 ## Build Docker Image
 
-Build the docker image locally
-
-```bash 
-docker build -t jhulibraries/mod-oriole:latest -t jhulibraries/mod-oriole:1.0.2 .
-```
-
-Push the new image to docker hub
-
-```bash
-docker push jhulibraries/mod-oriole:latest
-docker push jhulibraries/mod-oriole:1.0.2
-```
+See wiki page: [Package and publish docker images](https://github.com/jhu-sheridan-libraries/mod-oriole/wiki/Package-and-publish-docker-images)
 
 ## Build on Vagrant Virtual Box
 
@@ -373,9 +362,5 @@ python3 scripts/add-permissions.py
 ```
 
 
-docker build --no-cache --rm --tag=jhulibraries/mod-oriole:1.0.2 --tag=jhulibraries/mod-oriole:latest .
-docker images | grep mod-oriole
-docker push farooqsadiq/mod-oriole:1.0.2
-docker push farooqsadiq/mod-oriole:latest
 
 

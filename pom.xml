@@ -6,7 +6,7 @@
 
   <groupId>edu.jhu.libraries</groupId>
   <artifactId>mod-oriole</artifactId>
-  <version>1.0.11</version>
+  <version>1.0.12</version>
 
   <name>mod-oriole</name>
   <url>https://github.com/jhu-sheridan-libraries/mod-oriole</url>
@@ -403,6 +403,25 @@
           </execution>
         </executions>
       </plugin>
+
+      <plugin>
+        <groupId>com.spotify</groupId>
+        <artifactId>dockerfile-maven-plugin</artifactId>
+        <version>1.4.3</version>
+        <executions>
+          <execution>
+            <id>default</id>
+            <goals>
+              <goal>build</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <repository>docker.io/jhulibraries/mod-oriole</repository>
+          <tag>${project.version}</tag>
+        </configuration>
+      </plugin>
+
     </plugins>
   </build>
 </project>
