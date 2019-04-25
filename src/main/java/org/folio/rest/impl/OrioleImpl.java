@@ -113,7 +113,11 @@ public class OrioleImpl implements Oriole {
                             } else {
                                 ((Resource)o).setKeywords(null);
                             }
+
                         }
+
+                        // Hide passwords unless it's from a logged in user
+
                         resources.setResources(resourceList);
                         Integer total = reply.result().getResultInfo().getTotalRecords();
                         resources.setTotalRecords(total);
@@ -126,6 +130,70 @@ public class OrioleImpl implements Oriole {
                         ValidationHelper.handleError(reply.cause(), asyncResultHandler);
                     }
                 });
+    }
+
+    @Override
+    public void getOrioleDatabases(String query, int offset, int limit, List<String> facets, String lang, Map<String,
+            String> okapiHeaders, Handler<AsyncResult<Response>> asyncResultHandler, Context vertxContext) {
+        PostgresClient postgresClient = ApiUtil.getPostgresClient(okapiHeaders, vertxContext);
+        CQLWrapper cql;
+        try {
+            cql = ApiUtil.getCQL(query, limit, offset, RESOURCE_TABLE, RESOURCE_SCHEMA);
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
+            asyncResultHandler.handle(Future.failedFuture(e));
+            return;
+        }
+        List<FacetField> facetList = FacetManager.convertFacetStrings2FacetFields(facets, "jsonb");
+        postgresClient.get(
+                RESOURCE_TABLE,
+                Resource.class,
+                new String[] {"*"},
+                cql,
+                true,
+                false,
+                facetList,
+                reply -> {
+                    if (reply.succeeded()) {
+                        ResourceCollection resources = new ResourceCollection();
+                        List<Resource> resourceList = reply.result().getResults();
+                        while (resourceList.remove(null));
+                        // There's a weird bug (possibly) in folio. When there is a URL
+                        // param for "facets", it returns "Facet" objects
+                        // in the resourceList. The following code doesn't resolve it. They're
+                        // just left here for future reference.
+                        // For example: /oriole/resources?facets=tags.tagList[]
+                        Iterator<Resource> it = resourceList.iterator();
+                        while (it.hasNext()) {
+                            Object o = it.next();
+                            if (o instanceof Facet) {
+                                resourceList.remove(o);
+                            } else {
+                                ((Resource)o).setKeywords(null);
+                                ((Resource)o).setPasswords(null);
+                            }
+                        }
+
+                        // Hide passwords unless it's from a logged in user
+
+                        resources.setResources(resourceList);
+                        Integer total = reply.result().getResultInfo().getTotalRecords();
+                        resources.setTotalRecords(total);
+                        resources.setResultInfo(reply.result().getResultInfo());
+                        asyncResultHandler.handle(
+                                Future.succeededFuture(
+                                        GetOrioleResourcesResponse.respond200WithApplicationJson(
+                                                resources)));
+                    } else {
+                        ValidationHelper.handleError(reply.cause(), asyncResultHandler);
+                    }
+                });
+    }
+
+    @Override
+    public void postOrioleDatabases(String lang, Resource entity, Map<String, String> okapiHeaders,
+                                    Handler<AsyncResult<Response>> asyncResultHandler, Context vertxContext) {
+
     }
 
     @Override

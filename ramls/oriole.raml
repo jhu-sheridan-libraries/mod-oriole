@@ -33,6 +33,22 @@ resourceTypes:
   get-only: !include raml-util/rtypes/get-only.raml
 
 /oriole:
+  /databases:
+    displayName: Databases Records
+    description: Full Databases Collection
+    type:
+      collection:
+        schemaCollection: resourceCollection
+        schemaItem: resource
+        exampleCollection: !include examples/resources.json
+        exampleItem: !include examples/resource.json
+    get:
+      is: [
+        searchable: { description: "with valid serchable fields: for example keyword=physics", example: "keyword=chemistry" },
+        pageable,
+        validate,
+        facets
+      ]
   /resources:
     displayName: Resources
     description: Resources Collection
