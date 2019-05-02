@@ -21,9 +21,12 @@
       "type": "string",
       "description": "the primary title (or label) associated with the resource"
     },
-    "altTitle": {
-      "type": "string",
-      "description": "an alternative title for the resource."
+    "altTitles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "alternative titles for the resource."
     },
     "publisher": {
       "type": "string",
@@ -37,11 +40,9 @@
       "type": "string",
       "description": "an introduction of the resource"
     },
-    "creatorUsername": {
-      "type": "string",
-      "description": "username of the user who created the record",
-      "example": "johndoe17",
-      "readonly": true
+    "proxy": {
+      "type": "boolean",
+      "description": "an indicator whether the URL needs to be proxied by ezProxy"
     },
     "identifier": {
       "type": "array",
@@ -62,9 +63,6 @@
       "additionalItems": true,
       "uniqueItems": true,
       "description": "an extensible set of name-value pairs of identifiers associated with the resource"
-    },
-    "libraryId": {
-      "type": "string"
     },
     "terms": {
       "type": "array",
@@ -89,12 +87,30 @@
       "type": "string",
       "readonly": true
     },
-    "passwords": {
-      "type": "string"
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "public": {
+            "type": "boolean"
+          },
+          "content": {
+            "type": "string"
+          }
+        }
+      }
     },
     "tags": {
       "type" : "object",
       "$ref" : "../raml-util/schemas/tags.schema"
+    },
+    "metadata": {
+      "type": "object",
+      "$ref": "../raml-util/schemas/metadata.schema"
     }
   },
   "required": [
