@@ -2,6 +2,7 @@ package org.folio.rest.impl;
 
 import io.vertx.core.*;
 import io.vertx.core.json.JsonArray;
+import org.apache.commons.io.IOUtils;
 import org.folio.okapi.common.ErrorType;
 import org.folio.okapi.common.ExtendedAsyncResult;
 import org.folio.okapi.common.Failure;
@@ -25,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.Response;
+import java.io.InputStream;
 import java.util.*;
 
 public class OrioleImpl implements Oriole {
@@ -37,10 +39,32 @@ public class OrioleImpl implements Oriole {
     private static final String SUBJECT_SCHEMA_PATH = "ramls/schemas/subject.json";
     private static final String LOCATION_PREFIX = "/oriole/resources/";
     private static final String SUBJECT_PREFIX = "/oriole/subjects/";
+    private String RESOURCE_SCHEMA = null;
+    private String SUBJECT_SCHEMA = null;
     private final Messages messages = Messages.getInstance();
 
     public OrioleImpl(Vertx vertx, String tennantId) {
+        if (RESOURCE_SCHEMA == null || SUBJECT_SCHEMA == null) {
+            initCQLValidation();
+        }
         PostgresClient.getInstance(vertx, tennantId).setIdField(ID_FIELD_NAME);
+    }
+
+    private void initCQLValidation() {
+        try {
+            InputStream ris = getClass().getClassLoader().getResourceAsStream(RESOURCE_SCHEMA_PATH);
+            RESOURCE_SCHEMA = IOUtils.toString(ris, "UTF-8");
+        } catch (Exception e) {
+            LOGGER.error("Unable to load schema - " + RESOURCE_SCHEMA_PATH
+                    + ", validation of query fields will not be active");
+        }
+        try {
+            InputStream sis = getClass().getClassLoader().getResourceAsStream(SUBJECT_SCHEMA_PATH);
+            SUBJECT_SCHEMA = IOUtils.toString(sis, "UTF-8");
+        } catch (Exception e) {
+            LOGGER.error("Unable to load schema - " + SUBJECT_SCHEMA_PATH
+                    + ", validation of query fields will not be active");
+        }
     }
 
     @Override
@@ -56,7 +80,7 @@ public class OrioleImpl implements Oriole {
         PostgresClient postgresClient = ApiUtil.getPostgresClient(okapiHeaders, vertxContext);
         CQLWrapper cql;
         try {
-            cql = ApiUtil.getCQL(query, limit, offset, RESOURCE_TABLE, RESOURCE_SCHEMA_PATH);
+            cql = ApiUtil.getCQL(query, limit, offset, RESOURCE_TABLE, RESOURCE_SCHEMA);
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
             asyncResultHandler.handle(Future.failedFuture(e));
@@ -81,16 +105,16 @@ public class OrioleImpl implements Oriole {
                         // in the resourceList. The following code doesn't resolve it. They're
                         // just left here for future reference.
                         // For example: /oriole/resources?facets=tags.tagList[]
-//                        Iterator<Resource> it = resourceList.iterator();
-//                        while (it.hasNext()) {
-//                            Object o = it.next();
-//                            if (o instanceof Facet) {
-//                                resourceList.remove(o);
-//                            } else {
-//                                ((Resource)o).setKeywords(null);
-//                            }
-//
-//                        }
+                        Iterator<Resource> it = resourceList.iterator();
+                        while (it.hasNext()) {
+                            Object o = it.next();
+                            if (o instanceof Facet) {
+                                resourceList.remove(o);
+                            } else {
+                                ((Resource)o).setKeywords(null);
+                            }
+
+                        }
 
                         // Hide passwords unless it's from a logged in user
 
@@ -114,7 +138,7 @@ public class OrioleImpl implements Oriole {
         PostgresClient postgresClient = ApiUtil.getPostgresClient(okapiHeaders, vertxContext);
         CQLWrapper cql;
         try {
-            cql = ApiUtil.getCQL(query, limit, offset, RESOURCE_TABLE, RESOURCE_SCHEMA_PATH);
+            cql = ApiUtil.getCQL(query, limit, offset, RESOURCE_TABLE, RESOURCE_SCHEMA);
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
             asyncResultHandler.handle(Future.failedFuture(e));
