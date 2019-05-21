@@ -8,11 +8,17 @@
       "handlers": [
         {
           "methods": [ "GET" ],
-          "pathPattern": "/oriole/resources"
+          "pathPattern": "/oriole/databases",
+        },
+        {
+          "methods": [ "GET" ],
+          "pathPattern": "/oriole/resources",
+          "permissionsRequired": [ "oriole.resources.collection.get" ]
         },
         {
           "methods": ["GET"],
-          "pathPattern": "/oriole/resources/{id}"
+          "pathPattern": "/oriole/resources/{id}",
+          "permissionsRequired": [ "oriole.resources.item.get" ]
         },
         {
           "methods": [ "POST" ],
@@ -22,7 +28,6 @@
         {
           "methods": [ "PUT" ],
           "pathPattern": "/oriole/resources/{id}",
-          "permissionsRequired": [ "oriole.item.put" ],
           "permissionsRequired": [ "oriole.resources.item.put" ]
         },
         {
