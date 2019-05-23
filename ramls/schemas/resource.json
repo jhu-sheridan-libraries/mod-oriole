@@ -104,9 +104,12 @@
         }
       }
     },
-    "requireLogin": {
-      "type": "boolean",
-      "description": "If the database metadata contains sensitive information that requires a user to login"
+    "availability": {
+      "type": "array",
+      "description": "List of campuses/libraries that this resource is available. If empty, it's available to all",
+      "items": {
+        "type": "string"
+      }
     },
     "tags": {
       "type" : "object",
