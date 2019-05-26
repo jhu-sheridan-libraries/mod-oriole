@@ -87,11 +87,12 @@ $$ LANGUAGE plpgsql;
 
 -- alter function ${myuniversity}_${mymodule}.resource_set_keywords() owner to folio;
 
-CREATE trigger set_resource_keywords_trigger
+DROP TRIGGER IF EXISTS set_resource_keywords_trigger
+  ON ${myuniversity}_${mymodule}.resource;
+CREATE TRIGGER set_resource_keywords_trigger
   BEFORE INSERT OR UPDATE
-  ON resource
-  FOR each row
-EXECUTE PROCEDURE resource_set_keywords();
+  ON ${myuniversity}_${mymodule}.resource
+  FOR each row EXECUTE PROCEDURE ${myuniversity}_${mymodule}.resource_set_keywords();
 
 -- Create a view of all tags
 CREATE OR REPLACE VIEW ${myuniversity}_${mymodule}.tag_view AS
