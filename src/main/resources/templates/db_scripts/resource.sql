@@ -28,20 +28,20 @@ BEGIN
         CASE jsonb_typeof(input)
                 WHEN 'object' THEN
                         FOR key, value IN SELECT * FROM jsonb_each(input) LOOP
-                          case key
-                            when 'title' then
+                          CASE key
+                            WHEN 'title' THEN
                               RETURN QUERY SELECT ${myuniversity}_${mymodule}.extract_keyword_element(value);
-                            when 'term' then
+                            WHEN 'term' THEN
                               RETURN QUERY SELECT ${myuniversity}_${mymodule}.extract_keyword_element(value);
-                            when 'terms' then
+                            WHEN 'terms' THEN
                               RETURN QUERY SELECT ${myuniversity}_${mymodule}.extract_keyword_element(value);
-                            when 'subject' then
+                            WHEN 'subject' THEN
                               RETURN QUERY SELECT ${myuniversity}_${mymodule}.extract_keyword_element(value);
-                            when 'description' then
+                            WHEN 'description' THEN
                               RETURN QUERY SELECT ${myuniversity}_${mymodule}.extract_keyword_element(value);
-                            else
-                              null;
-                          end case;
+                            ELSE
+                              NULL;
+                          END CASE;
                         END LOOP;
                 WHEN 'array' THEN
                         FOR value IN SELECT jsonb_array_elements(input) LOOP
@@ -61,7 +61,7 @@ CREATE OR REPLACE FUNCTION ${myuniversity}_${mymodule}.combine_keyword_element(i
 DECLARE
   keywords text;
 BEGIN
-  select string_agg(txt, ' ') into keywords from ${myuniversity}_${mymodule}.extract_text_elements(input) as txt;
+  SELECT string_agg(txt, ' ') INTO keywords FROM ${myuniversity}_${mymodule}.extract_text_elements(input) AS txt;
   return keywords;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE ;
@@ -95,8 +95,8 @@ EXECUTE PROCEDURE resource_set_keywords();
 
 -- Create a view of all tags
 CREATE OR REPLACE VIEW ${myuniversity}_${mymodule}.tag_view AS
-SELECT distinct jsonb_array_elements_text(resource.jsonb->'tags'->'tagList') tag
-FROM ${myuniversity}_${mymodule}.resource;
+  SELECT DISTINCT jsonb_array_elements_text(resource.jsonb->'tags'->'tagList') tag
+  FROM ${myuniversity}_${mymodule}.resource;
 GRANT SELECT ON ${myuniversity}_${mymodule}.tag_view TO ${myuniversity}_${mymodule};
 
 
