@@ -71,7 +71,7 @@ $$ LANGUAGE plpgsql IMMUTABLE ;
 -- ALTER TABLE ${myuniversity}_${mymodule}.resource ADD column keywords tsvector;
 -- create index idx_keyword_full_text on ${myuniversity}_${mymodule}.resource using gin(keywords);
 
-create function ${myuniversity}_${mymodule}.resource_set_keywords()
+create or replace function ${myuniversity}_${mymodule}.resource_set_keywords()
   returns trigger
 as $$
 DECLARE
@@ -79,7 +79,7 @@ DECLARE
 BEGIN
 --   NEW.keywords = to_tsvector('english', ${myuniversity}_${mymodule}.combine_keyword_element(NEW.jsonb));
   keywords = replace(${myuniversity}_${mymodule}.combine_keyword_element(NEW.jsonb), '"', ' ');
-  NEW.jsonb = jsonb_set(NEW.jsonb, '{keywords}', concat('"', keywords, '"')::jsonb, true);
+  NEW.jsonb = jsonb_set(NEW.jsonb, '{keywords}', to_jsonb(keywords), true);
 --   NEW.keywords = to_tsvector('English', NEW.jsonb::text);
   RETURN NEW;
 END;
