@@ -6,11 +6,11 @@ BEGIN
         CASE jsonb_typeof(input)
                 WHEN 'object' THEN
                         FOR key, value IN SELECT * FROM jsonb_each(input) LOOP
-                                RETURN QUERY SELECT extract_text_elements(value);
+                                RETURN QUERY SELECT ${myuniversity}_${mymodule}.extract_text_elements(value);
                         END LOOP;
                 WHEN 'array' THEN
                         FOR value IN SELECT jsonb_array_elements(input) LOOP
-                                RETURN QUERY SELECT extract_text_elements(value);
+                                RETURN QUERY SELECT ${myuniversity}_${mymodule}.extract_text_elements(value);
                         END LOOP;
                 WHEN 'string' THEN
                         RETURN NEXT input #>> '{}';
