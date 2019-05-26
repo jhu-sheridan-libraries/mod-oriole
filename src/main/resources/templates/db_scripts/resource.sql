@@ -71,9 +71,9 @@ $$ LANGUAGE plpgsql IMMUTABLE ;
 -- ALTER TABLE ${myuniversity}_${mymodule}.resource ADD column keywords tsvector;
 -- create index idx_keyword_full_text on ${myuniversity}_${mymodule}.resource using gin(keywords);
 
-create or replace function ${myuniversity}_${mymodule}.resource_set_keywords()
+CREATE OR REPLACE FUNCTION ${myuniversity}_${mymodule}.resource_set_keywords()
   returns trigger
-as $$
+AS $$
 DECLARE
   keywords text;
 BEGIN
@@ -83,20 +83,20 @@ BEGIN
 --   NEW.keywords = to_tsvector('English', NEW.jsonb::text);
   RETURN NEW;
 END;
-$$ language plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- alter function ${myuniversity}_${mymodule}.resource_set_keywords() owner to folio;
 
-create trigger set_resource_keywords_trigger
-  before insert or update
-  on resource
-  for each row
-execute procedure resource_set_keywords();
+CREATE trigger set_resource_keywords_trigger
+  BEFORE INSERT OR UPDATE
+  ON resource
+  FOR each row
+EXECUTE PROCEDURE resource_set_keywords();
 
 -- Create a view of all tags
 CREATE OR REPLACE VIEW ${myuniversity}_${mymodule}.tag_view AS
 SELECT distinct jsonb_array_elements_text(resource.jsonb->'tags'->'tagList') tag
-from ${myuniversity}_${mymodule}.resource;
+FROM ${myuniversity}_${mymodule}.resource;
 GRANT SELECT ON ${myuniversity}_${mymodule}.tag_view TO ${myuniversity}_${mymodule};
 
 
