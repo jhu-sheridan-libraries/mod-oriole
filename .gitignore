@@ -38,3 +38,5 @@ mod-oriole.iml
 src/main/resources
 !src/main/resources/templates.db_scripts
 
+.vagrant
+

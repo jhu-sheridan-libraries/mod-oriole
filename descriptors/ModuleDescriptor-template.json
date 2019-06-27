@@ -8,7 +8,11 @@
       "handlers": [
         {
           "methods": [ "GET" ],
-          "pathPattern": "/oriole/databases",
+          "pathPattern": "/oriole/databases"
+        },
+        {
+          "methods": [ "GET" ],
+          "pathPattern": "/oriole/databases/{id}"
         },
         {
           "methods": [ "GET" ],

@@ -34,8 +34,8 @@ resourceTypes:
 
 /oriole:
   /databases:
-    displayName: Databases Records
-    description: Full Databases Collection
+    displayName: Resources
+    description: Resources Collection
     type:
       collection:
         schemaCollection: resourceCollection
@@ -49,6 +49,25 @@ resourceTypes:
         validate,
         facets
       ]
+      responses:
+    /{resourceId}:
+      displayName: Resource
+      description: Get, Delete or Update a specific resource
+      type:
+        collection-item:
+          schema: resource
+          exampleItem: !include examples/resource.json
+      get:
+        is: [ validate ]
+        responses:
+          400:
+            description: "Bad request"
+            body:
+              text/plain:
+          401:
+            description: "Not authorized to perform requested action"
+            body:
+              text/plain:
   /resources:
     displayName: Resources
     description: Resources Collection

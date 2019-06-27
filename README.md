@@ -60,7 +60,7 @@ cat > /tmp/postgres-conf.json <<END
   "host": "localhost",
   "port": 5432,
   "username": "folio",
-  "password": "folio123",
+  "password": "folio",
   "database": "folio"
 }
 END
