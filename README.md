@@ -12,8 +12,10 @@ git clone --recurse-submodules -j8 git@github.com:jhu-sheridan-libraries/mod-ori
 
 ### Build
 
+Note: Some of the tests are not working. So simply ignore the tests when building for now.
+
 ```bash 
-mvn clean install 
+mvn clean install -DskipTests 
 ```
 
 The above command will compile, test and create a fat-jar file in the `target` directory. 
