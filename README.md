@@ -10,7 +10,7 @@ To clone the porject from github, make sure you inlucde the submodules:
 git clone --recurse-submodules -j8 git@github.com:jhu-sheridan-libraries/mod-oriole.git
 ```
 
-### Docker installation on MAC
+### Docker installation on MAC (manual)
 * brew install docker-machine docker-compose
 * brew install docker
 * brew install virtualbox
@@ -18,6 +18,9 @@ git clone --recurse-submodules -j8 git@github.com:jhu-sheridan-libraries/mod-ori
 * docker-machine env default
 * eval $(docker-machine env default)
 * docker run docker.io/jhulibraries/mod-oriole:1.0.17
+
+### Docker installation on MAC (automated)
+* download and install Docker Desktop
 
 ### Build
 
