@@ -46,6 +46,11 @@
         },
         {
           "methods": [ "GET" ],
+          "pathPattern": "/oriole/ezproxy",
+          "permissionsRequired": []
+        },
+        {
+          "methods": [ "GET" ],
           "pathPattern": "/oriole/subjects",
           "permissionsRequired": [ "oriole.subjects.collection.get" ]
         },

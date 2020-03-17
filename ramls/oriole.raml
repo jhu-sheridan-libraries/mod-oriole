@@ -9,12 +9,17 @@ documentation:
 
 types:
   resource: !include schemas/resource.json
+  stanzas: !include schemas/stanzas.json
   resourceCollection: !include schemas/resources.json
   tagCollection:
     type: object
     properties:
       tags:
         type: string[]
+  customFile:
+    type: file
+    fileTypes: ['*/*'] # any file type allowed
+    maxLength: 1048576
   subject: !include schemas/subject.json
   subjectCollection: !include schemas/subjects.json
   errors: !include raml-util/schemas/errors.schema
@@ -138,6 +143,14 @@ resourceTypes:
             application/json:
               type: tagCollection
 
+  /ezproxy:
+     displayName: Ezproxy
+     description: Get Ezproxy database stanzas
+     get:
+       responses:
+         200:
+           body:
+             text/plain:
 
   /subjects:
     type:

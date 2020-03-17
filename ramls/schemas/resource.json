@@ -33,6 +33,10 @@
       "type": "string",
       "description": "name of the creator of the resource"
     },
+    "provider": {
+      "type": "string",
+      "description": "name of the provider of the resource"
+    },
     "description": {
       "type": "string",
       "description": "an introduction of the resource"

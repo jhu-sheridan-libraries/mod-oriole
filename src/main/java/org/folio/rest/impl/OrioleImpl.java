@@ -27,9 +27,12 @@ import org.folio.rest.tools.utils.ValidationHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.InputStream;
+import java.io.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class OrioleImpl implements Oriole {
@@ -112,6 +115,9 @@ public class OrioleImpl implements Oriole {
       getLastAltId(okapiHeaders, vertxContext, res -> {
         if (res.succeeded()) {
           String lastAltId = res.result();
+          if (lastAltId == null || lastAltId.isEmpty()) {
+            lastAltId="0001";
+          }
           entity.setAltId(getNextAltId(lastAltId));
           saveResource(entity, okapiHeaders, asyncResultHandler, vertxContext);
         } else {
@@ -349,6 +355,136 @@ public class OrioleImpl implements Oriole {
         }
       });
     });
+  }
+
+  public void getOrioleEzproxy(
+          Map<String, String> okapiHeaders,
+          Handler<AsyncResult<Response>> asyncResultHandler,
+          Context vertxContext) {
+    vertxContext.runOnContext(v -> {  // TODO: Is this necessary?
+      PostgresClient client = ApiUtil.getPostgresClient(okapiHeaders, vertxContext);
+      String sql = "SELECT jsonb -> 'url' as url, jsonb ->'altId' as altId, jsonb ->'title' as title FROM " + RESOURCE_TABLE;
+      client.select(sql, (reply) -> {
+        if (reply.succeeded()) {
+          List<JsonArray> results = reply.result().getResults();
+          List<String> domains = new ArrayList<>();
+          List<Stanzas> stanzas = new ArrayList<>();
+          domains.add("test2");
+
+          //loop through results build a list of unique domains
+          //extract the altid and title for the first unique value
+          for (JsonArray result : results) {
+            String url = result.getString(0).replaceAll("\"", "");
+            String domain = getSubdomain(url);
+            String altId =result.getString(1);
+            String title =result.getString(2);
+            if (!stanzas.contains(domain)) {
+              Stanzas stanza = new Stanzas();
+              System.out.println(domain);
+              stanza.setDomain(domain);
+              stanza.setAltid(altId);
+              stanza.setTitle(title);
+              stanzas.add(stanza);
+            }
+          }
+
+          //loop through domains
+          for (Stanzas stanza : stanzas) {
+            //loop through URLs
+            System.out.println(stanza.getDomain());
+            for (JsonArray result : results) {
+              String url =result.getString(0).replaceAll("\"", "");
+              String subdomain = getSubdomain(url);
+              String altId = result.getString(1);
+              if (subdomain.contains(stanza.getDomain())) {
+                //add url to stanza object
+                List<String> urls = stanza.getUrls();
+                if (!urls.contains(subdomain)) {
+                  urls.add(subdomain);
+                  stanza.setUrls(urls);
+                }
+                //add alt id to stanza object
+                List<String> altIds = stanza.getAltids();
+                altIds.add(altId);
+                stanza.setAltids(altIds);
+              }
+            }
+          }
+
+          try {
+            writeEzproxyFile(stanzas);
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
+
+          //get parse domains
+          //loop through urls, parse domains with regex add new to array
+          //TagCollection domainCollection = new TagCollectionImpl();
+          //Collection<String> domainCollection = new ArrayList<String>();
+
+          System.out.println(("Test"));
+            asyncResultHandler.handle(
+                    Future.succeededFuture(GetOrioleEzproxyResponse.respond200WithTextPlain(domains.toString())));
+        } else {
+          ValidationHelper.handleError(reply.cause(), asyncResultHandler);
+        }
+      });
+    });
+  }
+
+  public String getDomain(String url) {
+    //pattern to extract domain and remove the first subddomain with http(s)://
+    Pattern p = Pattern.compile("^(https?)(://)([-a-zA-Z0-9+&@#%?=~_|!:,;]*)(\\.?)([-a-zA-Z0-9+&@#%?=~_|!:,.;]*)(/?)[\\w/.&?=,:+%-/;#]*");
+    String domain = null;
+    try {
+      Matcher m = p.matcher(url);
+      boolean b = m.matches();
+      domain = m.group(5);
+      System.out.println(domain);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return domain;
+  }
+
+  public String getSubdomain(String url) {
+    //pattern to extract main url without http(s):// or anything after the first slash
+    Pattern p = Pattern.compile("^(https?)(://)([-a-zA-Z0-9+&@#%?=~_|!:,.;]*)(/?)[\\w/.&?=,:+%-/;#]*");
+    String subdomain = null;
+    try {
+      Matcher m = p.matcher(url);
+      boolean b = m.matches();
+      subdomain = m.group(3);
+      System.out.println(subdomain);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return subdomain;
+  }
+
+  public static void writeEzproxyFile(List<Stanzas> stanzas) throws IOException {
+    File fout = new File("/Users/amanda/xerxes.txt");
+    FileOutputStream fos = new FileOutputStream(fout);
+
+    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
+
+    for (Stanzas stanza : stanzas) {
+      bw.write("Title " + stanza.getTitle() + "(" + stanza.getAltid() + ")");
+      bw.newLine();
+      bw.write("# Complete list of included Metalib IRD IDs: " + stanza.getAltids().toString());
+      bw.newLine();
+      bw.write("URL: " + stanza.getDomain());
+      bw.newLine();
+      bw.write("DJ: " + stanza.getDomain());
+      bw.newLine();
+      for (String url : stanza.getUrls()) {
+          bw.write("HJ: " + url);
+          bw.newLine();
+      }
+      bw.newLine();
+      bw.newLine();
+    }
+    bw.close();
   }
 
   @Override
