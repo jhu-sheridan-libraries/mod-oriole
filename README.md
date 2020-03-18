@@ -2,6 +2,30 @@
 
 ## Getting Started
 
+#### Sandbox Setup
+Download and Install Intellij
+brew install maven
+Brew install jetty
+brew install jenv
+
+Manually download corretto8 https://docs.aws.amazon.com/corretto/latest/corretto-8-ug/macos-install.html
+jenv add /Library/Java/JavaVirtualMachines/amazon-corretto-8.jdk/Contents/Home/
+jenv global 1.8
+
+Update bash settings
+
+java -jar target/mod-oriole-fat.jar
+Postgres setup
+
+exec java "$JAVA_OPTS" -jar ${VERTICLE_HOME}/module.jar "$@"
+
+#### IntelliJ Debugger Settings:
+Main class: org.folio.rest.RestLauncher
+Project Arguments: run org.folio.rest.RestVerticle db_connection=/Users/amanda/oriole/mod-oriole-archive/postgres-conf.idea.json
+Working Dir: /[your path to]/mod-oriole
+Use classpath of module: mod-oriole
+JDK: Default 1.8
+
 ### Clone from GitHub
 
 To clone the porject from github, make sure you inlucde the submodules:
