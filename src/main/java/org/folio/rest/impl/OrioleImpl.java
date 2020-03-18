@@ -3,6 +3,7 @@ package org.folio.rest.impl;
 import io.vertx.core.*;
 import io.vertx.core.json.JsonArray;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.folio.okapi.common.ErrorType;
@@ -30,6 +31,8 @@ import org.slf4j.LoggerFactory;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -363,7 +366,7 @@ public class OrioleImpl implements Oriole {
           Context vertxContext) {
     vertxContext.runOnContext(v -> {  // TODO: Is this necessary?
       PostgresClient client = ApiUtil.getPostgresClient(okapiHeaders, vertxContext);
-      String sql = "SELECT jsonb -> 'url' as url, jsonb ->'altId' as altId, jsonb ->'title' as title FROM " + RESOURCE_TABLE;
+      String sql = "SELECT jsonb -> 'url' as url, jsonb ->'altId' as altId, jsonb ->'title' as title, jsonb -> 'accessRestrictions' FROM " + RESOURCE_TABLE;
       client.select(sql, (reply) -> {
         if (reply.succeeded()) {
           List<JsonArray> results = reply.result().getResults();
@@ -375,26 +378,42 @@ public class OrioleImpl implements Oriole {
           //extract the altid and title for the first unique value
           for (JsonArray result : results) {
             String url = result.getString(0).replaceAll("\"", "");
-            String domain = getSubdomain(url);
+            String domain = null;
+            Stanzas stanza = new Stanzas();
+            try {
+              stanza = getDomain(url,stanza);
+            } catch (MalformedURLException e) {
+              e.printStackTrace();
+            }
             String altId =result.getString(1);
             String title =result.getString(2);
-            if (!stanzas.contains(domain)) {
-              Stanzas stanza = new Stanzas();
-              System.out.println(domain);
-              stanza.setDomain(domain);
-              stanza.setAltid(altId);
-              stanza.setTitle(title);
-              stanzas.add(stanza);
+
+            boolean domainPresent = false;
+
+            for (Stanzas s : stanzas) {
+              if (s.getDomain().contains(stanza.getDomain())){
+                domainPresent = true;
+              }
+            }
+            if (!domainPresent) {
+                stanza.setAltid(altId);
+                stanza.setTitle(title);
+                stanzas.add(stanza);
             }
           }
 
-          //loop through domains
+          //loop through subdomains and get full subdomain url and altID
           for (Stanzas stanza : stanzas) {
             //loop through URLs
-            System.out.println(stanza.getDomain());
+            //System.out.println("Domain: " + stanza.getDomain());
             for (JsonArray result : results) {
               String url =result.getString(0).replaceAll("\"", "");
-              String subdomain = getSubdomain(url);
+              String subdomain = null;
+              try {
+                subdomain = getSubdomain(url);
+              } catch (MalformedURLException e) {
+                e.printStackTrace();
+              }
               String altId = result.getString(1);
               if (subdomain.contains(stanza.getDomain())) {
                 //add url to stanza object
@@ -417,14 +436,8 @@ public class OrioleImpl implements Oriole {
             e.printStackTrace();
           }
 
-          //get parse domains
-          //loop through urls, parse domains with regex add new to array
-          //TagCollection domainCollection = new TagCollectionImpl();
-          //Collection<String> domainCollection = new ArrayList<String>();
-
-          System.out.println(("Test"));
-            asyncResultHandler.handle(
-                    Future.succeededFuture(GetOrioleEzproxyResponse.respond200WithTextPlain(domains.toString())));
+          asyncResultHandler.handle(
+                  Future.succeededFuture(GetOrioleEzproxyResponse.respond200WithTextPlain(domains.toString())));
         } else {
           ValidationHelper.handleError(reply.cause(), asyncResultHandler);
         }
@@ -432,33 +445,30 @@ public class OrioleImpl implements Oriole {
     });
   }
 
-  public String getDomain(String url) {
-    //pattern to extract domain and remove the first subddomain with http(s)://
-    Pattern p = Pattern.compile("^(https?)(://)([-a-zA-Z0-9+&@#%?=~_|!:,;]*)(\\.?)([-a-zA-Z0-9+&@#%?=~_|!:,.;]*)(/?)[\\w/.&?=,:+%-/;#]*");
+  public Stanzas getDomain(String url, Stanzas stanza) throws MalformedURLException {
     String domain = null;
+    String protocol = null;
+    URL aURL = new URL(url);
     try {
-      Matcher m = p.matcher(url);
-      boolean b = m.matches();
-      domain = m.group(5);
-      System.out.println(domain);
+      //System.out.println("host = " + aURL.getHost());
+      protocol = aURL.getProtocol();
+      domain =  aURL.getHost();
+      //if count of . is > than 1
+      if (StringUtils.countMatches(domain, ".")>1) {
+        domain = domain.substring(domain.indexOf(".")+1);
+      }
+      //System.out.println("subdomain = " + domain);
+      stanza.setDomain(domain);
+      stanza.setBaseURL(protocol+"://"+domain);
     } catch (Exception e) {
       e.printStackTrace();
     }
-    return domain;
+    return stanza;
   }
 
-  public String getSubdomain(String url) {
-    //pattern to extract main url without http(s):// or anything after the first slash
-    Pattern p = Pattern.compile("^(https?)(://)([-a-zA-Z0-9+&@#%?=~_|!:,.;]*)(/?)[\\w/.&?=,:+%-/;#]*");
-    String subdomain = null;
-    try {
-      Matcher m = p.matcher(url);
-      boolean b = m.matches();
-      subdomain = m.group(3);
-      System.out.println(subdomain);
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+  public String getSubdomain(String url) throws MalformedURLException {
+    URL aURL = new URL(url);
+    String subdomain = aURL.getHost();
     return subdomain;
   }
 
@@ -471,9 +481,9 @@ public class OrioleImpl implements Oriole {
     for (Stanzas stanza : stanzas) {
       bw.write("Title " + stanza.getTitle() + "(" + stanza.getAltid() + ")");
       bw.newLine();
-      bw.write("# Complete list of included Metalib IRD IDs: " + stanza.getAltids().toString());
+      bw.write("# Complete list of IDs for included databases: " + stanza.getAltids().toString().replace("[", "").replace("]", "").replace(",", "").replace("\"", ""));
       bw.newLine();
-      bw.write("URL: " + stanza.getDomain());
+      bw.write("URL: " + stanza.getBaseURL());
       bw.newLine();
       bw.write("DJ: " + stanza.getDomain());
       bw.newLine();
