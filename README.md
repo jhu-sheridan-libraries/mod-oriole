@@ -6,17 +6,21 @@
 Download and Install Intellij
 
 `brew install maven`
+
 `brew install jetty`
+
 `brew install jenv`
 
 Manually download corretto8 https://docs.aws.amazon.com/corretto/latest/corretto-8-ug/macos-install.html
 
 `jenv add /Library/Java/JavaVirtualMachines/amazon-corretto-8.jdk/Contents/Home/`
+
 `jenv global 1.8`
 
 If you haven't already, enable the maven and export plugins:
 
 `jenv enable-plugin maven`
+
 `jenv enable-plugin export`
 
 Update bash settings
