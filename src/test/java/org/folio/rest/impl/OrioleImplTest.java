@@ -115,6 +115,15 @@ public class OrioleImplTest {
         // we have invoked the tenant interface, so the
         // call will fail (with lots of traces in the log)
         // drop tenant if it exists
+        // drop tenant if it exists
+        given().header(TENANT_HEADER)
+                .header(CONTENT_TYPE_HEADER)
+                .header(new Header("Accept", "text/plain"))
+                .delete("/_/tenant")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(anyOf(is(204), is(400)));
         given().header(TENANT_HEADER)
                 .header(CONTENT_TYPE_HEADER)
                 .header(new Header("Accept", "text/plain"))
