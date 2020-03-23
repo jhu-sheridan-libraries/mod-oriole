@@ -25,6 +25,7 @@ import org.folio.rest.tools.messages.Messages;
 import org.folio.rest.tools.utils.OutStream;
 import org.folio.rest.tools.utils.TenantTool;
 import org.folio.rest.tools.utils.ValidationHelper;
+import org.json.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +49,8 @@ public class OrioleImpl implements Oriole {
   private static final String SUBJECT_SCHEMA_PATH = "ramls/schemas/subject.json";
   private static final String LOCATION_PREFIX = "/oriole/resources/";
   private static final String SUBJECT_PREFIX = "/oriole/subjects/";
+  private static final List<String> AVOID_DOMAINS = Arrays.asList("jhu.edu","library.jhu.edu","mse.jhu.edu","ac.uk","co.uk");
+  private static final List<String> OMIT_DATABASES = Arrays.asList("JHU05048","JHU04485","JHU02980","JHU03588","JHU04456","JHU03659","JHU04935");
   private String RESOURCE_SCHEMA = null;
   private String SUBJECT_SCHEMA = null;
   private final Messages messages = Messages.getInstance();
@@ -366,83 +369,119 @@ public class OrioleImpl implements Oriole {
           Context vertxContext) {
     vertxContext.runOnContext(v -> {  // TODO: Is this necessary?
       PostgresClient client = ApiUtil.getPostgresClient(okapiHeaders, vertxContext);
-      String sql = "SELECT jsonb -> 'url' as url, jsonb ->'altId' as altId, jsonb ->'title' as title, jsonb -> 'accessRestrictions' FROM " + RESOURCE_TABLE;
+      String sql = "SELECT jsonb -> 'url' as url, jsonb ->'altId' as altId, jsonb ->'title' as title, jsonb -> 'availability' as availability FROM " + RESOURCE_TABLE;
       client.select(sql, (reply) -> {
         if (reply.succeeded()) {
           List<JsonArray> results = reply.result().getResults();
-          List<String> domains = new ArrayList<>();
           List<Stanzas> stanzas = new ArrayList<>();
-          domains.add("test2");
 
           //loop through results build a list of unique domains
-          //extract the altid and title for the first unique value
+          //also extract the altid, title and availabilities for the first unique value
           for (JsonArray result : results) {
-            String url = result.getString(0).replaceAll("\"", "");
+            //TODO get by field name not position
+            String url = cleanString(result.getString(0));
+            String altId = cleanString(result.getString(1));
+            String title = cleanString(result.getString(2));
+            String availability = result.getString(3);
+            JSONArray availabilityJson = new JSONArray(availability);
+            List<String> availabilities = new ArrayList<>();
             String domain = null;
             Stanzas stanza = new Stanzas();
+
+            //get and set url protocol and domain (removing first subdomain)
             try {
               stanza = getDomain(url,stanza);
+              if (AVOID_DOMAINS.contains(stanza.getDomain())){
+                continue;
+              }
             } catch (MalformedURLException e) {
               e.printStackTrace();
             }
-            String altId =result.getString(1);
-            String title =result.getString(2);
 
+            //convert availablities/restrictions json to list
+            for (Object item : availabilityJson) {
+                availabilities.add((String) item);
+            }
+
+            //add stanza object to the list if the base domain is not already added
             boolean domainPresent = false;
-
             for (Stanzas s : stanzas) {
               if (s.getDomain().contains(stanza.getDomain())){
                 domainPresent = true;
               }
             }
             if (!domainPresent) {
-                stanza.setAltid(altId);
-                stanza.setTitle(title);
-                stanzas.add(stanza);
+                stanzas.add(createStanza(stanza, altId, title, availabilities));
             }
           }
 
-          //loop through subdomains and get full subdomain url and altID
-          for (Stanzas stanza : stanzas) {
-            //loop through URLs
-            //System.out.println("Domain: " + stanza.getDomain());
-            for (JsonArray result : results) {
-              String url =result.getString(0).replaceAll("\"", "");
-              String subdomain = null;
-              try {
-                subdomain = getSubdomain(url);
-              } catch (MalformedURLException e) {
-                e.printStackTrace();
-              }
-              String altId = result.getString(1);
-              if (subdomain.contains(stanza.getDomain())) {
-                //add url to stanza object
-                List<String> urls = stanza.getUrls();
-                if (!urls.contains(subdomain)) {
-                  urls.add(subdomain);
-                  stanza.setUrls(urls);
-                }
-                //add alt id to stanza object
-                List<String> altIds = stanza.getAltids();
-                altIds.add(altId);
-                stanza.setAltids(altIds);
-              }
-            }
-          }
+          //loop through unique stanza subdomains add url and alitid for any item containing subdomain
+          stanzas = setDatabaseUrlsAndIds(stanzas, results);
 
+          //write the response text
+          String response = null;
           try {
-            writeEzproxyFile(stanzas);
+            response = writeEzproxyFile(stanzas);
+            System.out.println(response);
           } catch (IOException e) {
             e.printStackTrace();
           }
 
           asyncResultHandler.handle(
-                  Future.succeededFuture(GetOrioleEzproxyResponse.respond200WithTextPlain(domains.toString())));
+                  Future.succeededFuture(GetOrioleEzproxyResponse.respond200WithTextPlain(response)));
         } else {
           ValidationHelper.handleError(reply.cause(), asyncResultHandler);
         }
       });
     });
+  }
+
+  public Stanzas createStanza(Stanzas stanza, String altId, String title, List<String> availabilities) {
+      stanza.setAltid(altId);
+      stanza.setTitle(title);
+      stanza.setAvailability(availabilities);
+      if (OMIT_DATABASES.contains(altId)){
+        stanza.setOmitDb(true);
+      }
+      else {
+        stanza.setOmitDb(false);
+      }
+    return stanza;
+  }
+
+  public List<Stanzas> setDatabaseUrlsAndIds(List<Stanzas> stanzas,List<JsonArray> results) {
+    //loop through unique domains
+    for (Stanzas stanza : stanzas) {
+      //loop through all url looking for matches to the unique domain
+      for (JsonArray result : results) {
+        String url = cleanString(result.getString(0));
+        String subdomain = null;
+        try {
+          subdomain = getSubdomain(url);
+        } catch (MalformedURLException e) {
+          e.printStackTrace();
+        }
+        String altId = result.getString(1);
+        if (subdomain.contains(stanza.getDomain())) {
+          //add url to stanza object
+          List<String> urls = stanza.getUrls();
+          if (!urls.contains(subdomain)) {
+            urls.add(subdomain);
+            stanza.setUrls(urls);
+          }
+          //add alt id to stanza object
+          List<String> altIds = stanza.getAltids();
+          altIds.add(altId);
+          stanza.setAltids(altIds);
+        }
+      }
+    }
+    return stanzas;
+  }
+
+  public String cleanString(String s) {
+    s = s.replace("[", "").replace("]", "").replace(",", "").replace("\"", "");
+    return s;
   }
 
   public Stanzas getDomain(String url, Stanzas stanza) throws MalformedURLException {
@@ -472,29 +511,61 @@ public class OrioleImpl implements Oriole {
     return subdomain;
   }
 
-  public static void writeEzproxyFile(List<Stanzas> stanzas) throws IOException {
-    File fout = new File("/Users/amanda/xerxes.txt");
-    FileOutputStream fos = new FileOutputStream(fout);
-
-    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
+  public String writeEzproxyFile(List<Stanzas> stanzas) throws IOException {
+    List<Stanzas> campusAfflicationStanzas = new ArrayList<>();
+    List<Stanzas> omitStanzas = new ArrayList<>();
+    StringBuilder sb = new StringBuilder();
 
     for (Stanzas stanza : stanzas) {
-      bw.write("Title " + stanza.getTitle() + "(" + stanza.getAltid() + ")");
-      bw.newLine();
-      bw.write("# Complete list of IDs for included databases: " + stanza.getAltids().toString().replace("[", "").replace("]", "").replace(",", "").replace("\"", ""));
-      bw.newLine();
-      bw.write("URL: " + stanza.getBaseURL());
-      bw.newLine();
-      bw.write("DJ: " + stanza.getDomain());
-      bw.newLine();
-      for (String url : stanza.getUrls()) {
-          bw.write("HJ: " + url);
-          bw.newLine();
-      }
-      bw.newLine();
-      bw.newLine();
+        if (stanza.getAvailability().size() == 0) {
+            if (stanza.getOmitDb()) {
+              omitStanzas.add(stanza);
+            }
+            sb.append("Title " + stanza.getTitle() + " (" + stanza.getAltid() + ")");
+            sb.append("\n");
+            sb.append("# Complete list of IDs for included databases: " + stanza.getAltids().toString().replace("[", "").replace("]", "").replace(",", "").replace("\"", ""));
+            sb.append("\n");
+            sb.append("URL: " + stanza.getBaseURL());
+            sb.append("\n");
+            sb.append("DJ: " + stanza.getDomain());
+            sb.append("\n");
+            for (String url : stanza.getUrls()) {
+                sb.append("HJ: " + url);
+               sb.append("\n");
+            }
+            sb.append("\n");
+            sb.append("\n");
+        }
+        else if (stanza.getAvailability().size() == 1) {
+            campusAfflicationStanzas.add(stanza);
+        }
     }
-    bw.close();
+    for (Stanzas stanza : campusAfflicationStanzas) {
+      sb.append("# EZProxy group for campus affiliations: " + stanza.getAvailability().toString().replace("[", "").replace("]", "").replace(",", "").replace("\"", ""));
+      sb.append("\n");
+      sb.append("Group " + stanza.getAvailability().toString().replace("[", "").replace("]", "").replace(",", "").replace("\"", ""));
+      sb.append("\n");
+      sb.append("\n");
+      sb.append("Title " + stanza.getTitle() + "(" + stanza.getAltid() + ")");
+      sb.append("\n");
+      sb.append("URL: " + stanza.getBaseURL());
+      sb.append("\n");
+      sb.append("DJ: " + stanza.getDomain());
+      sb.append("\n");
+      for (String url : stanza.getUrls()) {
+        sb.append("HJ: " + url);
+       sb.append("\n");
+      }
+      sb.append("\n");
+      sb.append("\n");
+    }
+    for (Stanzas stanza : omitStanzas) {
+      sb.append("# Omitted as per Xerxes ezp_exp_resourceid_omit config: " + stanza.getAltid().replace("\"", ""));
+      sb.append("\n");
+      sb.append("# ");
+      sb.append("\n");
+    }
+    return sb.toString();
   }
 
   @Override
