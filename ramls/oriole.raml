@@ -49,7 +49,7 @@ resourceTypes:
         exampleItem: !include examples/resource.json
     get:
       is: [
-        searchable: { description: "with valid serchable fields: for example keyword=physics", example: "keyword=chemistry" },
+        searchable: { description: "with valid searchable fields: for example keyword=physics", example: "keyword=chemistry" },
         pageable,
         validate,
         facets
@@ -86,7 +86,7 @@ resourceTypes:
       is: [ validate ]
     get:
       is: [
-        searchable: { description: "with valid serchable fields: for example keyword=physics", example: "keyword=chemistry" },
+        searchable: { description: "with valid searchable fields: for example keyword=physics", example: "keyword=chemistry" },
         pageable,
         validate,
         facets

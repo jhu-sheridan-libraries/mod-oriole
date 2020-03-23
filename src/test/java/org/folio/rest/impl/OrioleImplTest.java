@@ -115,7 +115,6 @@ public class OrioleImplTest {
         // we have invoked the tenant interface, so the
         // call will fail (with lots of traces in the log)
         // drop tenant if it exists
-        // drop tenant if it exists
         given().header(TENANT_HEADER)
                 .header(CONTENT_TYPE_HEADER)
                 .header(new Header("Accept", "text/plain"))
@@ -139,7 +138,7 @@ public class OrioleImplTest {
                 .then()
                 .log()
                 .ifValidationFails()
-                .statusCode(500);
+                .statusCode(anyOf(is(401), is(500)));
     }
 
     @Test
