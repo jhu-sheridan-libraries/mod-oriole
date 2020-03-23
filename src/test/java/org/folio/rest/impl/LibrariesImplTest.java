@@ -25,6 +25,8 @@ import java.util.Locale;
 
 import static com.jayway.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.is;
 
 @RunWith(VertxUnitRunner.class)
 public class LibrariesImplTest {
@@ -32,14 +34,12 @@ public class LibrariesImplTest {
     private static final String LS = System.lineSeparator();
     private static Vertx vertx;
     private static Async async;
-    private static String moduleName;
-    private static String moduleVersion;
     private static String moduleId;
 
-    private static int port;
     private static final String TENANT = "test";
     private final Header TENANT_HEADER = new Header("X-Okapi-Tenant", TENANT);
-    private final Header JSON = new Header("Content-Type", "application/json");
+    private final Header CONTENT_TYPE_HEADER = new Header("Content-Type", "application/json");
+    private final Header ACCEPT_HEADER = new Header("Accept", "application/json");
 
     private final String library = "{"
             + "\"id\" : \"11111111-1111-1111-a111-111111111111\"," + LS
@@ -50,19 +50,21 @@ public class LibrariesImplTest {
     public void setUp(TestContext context) {
         Locale.setDefault(Locale.US);
         vertx = Vertx.vertx();
-        moduleName = PomReader.INSTANCE.getModuleName().replaceAll("_", "-");
-        moduleVersion = PomReader.INSTANCE.getVersion();
+        String moduleName = PomReader.INSTANCE.getModuleName().replaceAll("_", "-");
+        String moduleVersion = PomReader.INSTANCE.getVersion();
         moduleId = moduleName + "-" + moduleVersion;
         LOGGER.info("Test setup starting for " + moduleId);
         try {
             PostgresClient.setIsEmbedded(true);
             PostgresClient.getInstance(vertx).startEmbeddedPostgres();
+            // no  longer needed since we are dropping the tenant in each unit test
+            // PostgresClient.getInstance(vertx).execute("DELETE FROM test_mod_oriole.library", context.asyncAssertSuccess());
         } catch (IOException e) {
             e.printStackTrace();
             context.fail(e);
             return;
         }
-        port = NetworkUtils.nextFreePort();
+        int port = NetworkUtils.nextFreePort();
         DeploymentOptions options = new DeploymentOptions().setConfig(
                 new JsonObject().put("http.port", port).put(HttpClientMock2.MOCK_MODE, "true"));
         vertx.deployVerticle(RestVerticle.class.getName(), options, context.asyncAssertSuccess());
@@ -81,14 +83,15 @@ public class LibrariesImplTest {
 
     @Test
     public void testModuleRunning() {
-        // Simple GET request to see the module is running and we can talk to it.
+        // see if the module is running and we can talk to it
         given().get("/admin/health").then().log().all().statusCode(200);
     }
 
     @Test
     public void testGetWithoutTenant() {
-        // Simple GET request without a tanant
-        given().get("/oriole-libraries")
+        // get libraries without a tenant header
+        given().header(ACCEPT_HEADER)
+                .get("/oriole-libraries")
                 .then()
                 .log()
                 .ifValidationFails()
@@ -97,29 +100,40 @@ public class LibrariesImplTest {
     }
 
     @Test
-    public void testPostAndFetch(TestContext context) {
-        // initialize tenant
+    public void testPostAndFetch() {
+        // drop tenant if it exists
+        given().header(TENANT_HEADER)
+                .header(CONTENT_TYPE_HEADER)
+                .header(new Header("Accept", "text/plain"))
+                .delete("/_/tenant")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(anyOf(is(204), is(400)));
+        // add tenant
         String tenants = "{\"module_to\":\"" + moduleId + "\"}";
         given().header(TENANT_HEADER)
-                .header(JSON)
+                .header(CONTENT_TYPE_HEADER)
+                .header(ACCEPT_HEADER)
                 .body(tenants)
                 .post("/_/tenant")
                 .then()
                 .log()
                 .ifValidationFails()
                 .statusCode(201);
-        // Post
+        // add library
         given().header(TENANT_HEADER)
-                .header(JSON)
+                .header(CONTENT_TYPE_HEADER)
+                .header(ACCEPT_HEADER)
                 .body(library)
                 .post("/oriole-libraries")
                 .then()
                 .log()
                 .ifValidationFails()
                 .statusCode(201);
-
-        // Fetch the posted resource
+        // get library
         given().header(TENANT_HEADER)
+                .header(ACCEPT_HEADER)
                 .get("/oriole-libraries")
                 .then()
                 .log()
