@@ -227,4 +227,114 @@ public class EZProxyImplTest {
                 .statusCode(200)
                 .body(containsString(""));;
     }
+
+    @Test
+    public void canCreateResourcesWithSharedSubdomainAndGetEZProxyStanzas() {
+
+
+        String sage1 = " {\n" +
+                "    \"id\" : \"fef6d613-9d8a-41c5-873d-b6ad000dcafe\",\n" +
+                "    \"altId\" : \"JHU03917\",\n" +
+                "    \"url\" : \"https://journals.sagepub.com/\",\n" +
+                "    \"title\" : \"SAGE Journals Online\",\n" +
+                "    \"altTitle\" : \"\",\n" +
+                "    \"publisher\" : \"SAGE Publications\",\n" +
+                "    \"creator\" : \"SAGE Publications\",\n" +
+                "    \"provider\" : \"SAGE Publications\",\n" +
+                "    \"description\" : \"The SAGE Subject Collections are discipline-specific packages of the most popular peer-reviewed journals in Communication & Media Studies, Criminology, Education, Management & Organization Studies, Materials Science & Engineering, Nursing & Public Health, Political Science, Psychology, Sociology, and Urban Studies & Planning published by SAGE and participating societies.\",\n" +
+                "    \"proxy\" : true,\n" +
+                "    \"identifier\" : [ ],\n" +
+                "    \"terms\" : [ ],\n" +
+                "    \"accessRestrictions\" : [ ],\n" +
+                "    \"availability\" : [ ],\n" +
+                "    \"tags\" : {\n" +
+                "      \"tagList\" : [ \"Biomedical Sciences -- Core Databases\", \"Communication + Journalism -- Core Databases\" ]\n" +
+                "    }\n" +
+                "  }";
+
+        String sage2 = "{\n" +
+                "    \"id\" : \"1f30d141-30de-4c04-b4a4-e07b4d358aef\",\n" +
+                "    \"altId\" : \"JHU07025\",\n" +
+                "    \"url\" : \"http://sk.sagepub.com/cases\",\n" +
+                "    \"title\" : \"SAGE Business Cases\",\n" +
+                "    \"altTitle\" : \"\",\n" +
+                "    \"publisher\" : \"Sage Publications\",\n" +
+                "    \"creator\" : \"\",\n" +
+                "    \"provider\" : \"Sage Publications\",\n" +
+                "    \"description\" : \"This global collection of 1,000 proprietary and commissioned business cases from Sage is intended to elicit discussion and inspire researchers to develop their own best practices and prepare for professional success.  Many of these contemporary and newsworthy cases include teaching notes and discussion questions to facilitate classroom use.  Formats range from short vignettes to narrative long form. Cases were written based on field research and publicly available sources.  Click <a href=\\\"http://sk.sagepub.com/business-cases-partners\\\">here</a> to learn more about the contributors.\",\n" +
+                "    \"proxy\" : true,\n" +
+                "    \"identifier\" : [ ],\n" +
+                "    \"terms\" : [ ],\n" +
+                "    \"accessRestrictions\" : [ ],\n" +
+                "    \"availability\" : [ ],\n" +
+                "    \"tags\" : {\n" +
+                "      \"tagList\" : [ \"Business -- Cases\", \"My Saved Databases -- Databases\" ]\n" +
+                "    }\n" +
+                "  }";
+
+
+        // drop tenant if it exists
+        given().header(TENANT_HEADER)
+                .header(CONTENT_TYPE_HEADER)
+                .header(new Header("Accept", "text/plain"))
+                .delete("/_/tenant")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(anyOf(is(204), is(400)));
+        // add tenant
+        String tenants = "{\"module_to\":\"" + moduleId + "\"}";
+        given().header(TENANT_HEADER)
+                .header(CONTENT_TYPE_HEADER)
+                .header(ACCEPT_HEADER)
+                .body(tenants)
+                .post("/_/tenant")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(201);
+        // add resource one
+        given().header(TENANT_HEADER)
+                .header(CONTENT_TYPE_HEADER)
+                .header(ACCEPT_HEADER)
+                .body(sage1)
+                .post("/oriole/resources")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(201);
+        // add resource two
+        given().header(TENANT_HEADER)
+                .header(CONTENT_TYPE_HEADER)
+                .header(ACCEPT_HEADER)
+                .body(sage2)
+                .post("/oriole/resources")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(201);
+        // get resources
+        given().header(TENANT_HEADER)
+                .header(ACCEPT_HEADER)
+                .get("/oriole/resources")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(200)
+                .body(containsString("\"totalRecords\" : 2"));
+        // get ezproxy stanzas
+        given().header(TENANT_HEADER)
+                .header(new Header("Accept", "text/plain"))
+                .get("/oriole/ezproxy")
+                .then()
+                .log()
+                .ifValidationFails()
+                .statusCode(200)
+                .body(containsString("Title SAGE Journals Online (JHU03917)"))
+                .body(containsString("# Complete list of IDs for included databases: JHU03917 JHU07025"))
+                .body(containsString("URL: https://sagepub.com"))
+                .body(containsString("DJ: sagepub.com"))
+                .body(containsString("HJ: journals.sagepub.com"))
+                .body(containsString("HJ: sk.sagepub.com"));
+    }
 }
