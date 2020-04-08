@@ -46,11 +46,6 @@
         },
         {
           "methods": [ "GET" ],
-          "pathPattern": "/oriole/ezproxy",
-          "permissionsRequired": []
-        },
-        {
-          "methods": [ "GET" ],
           "pathPattern": "/oriole/subjects",
           "permissionsRequired": [ "oriole.subjects.collection.get" ]
         },
@@ -116,6 +111,17 @@
           "methods": [ "DELETE" ],
           "pathPattern": "/oriole-libraries",
           "permissionsRequired": [ "oriole.libraries.collection.delete" ]
+        }
+      ]
+    },
+    {
+      "id": "ezproxy",
+      "version": "${version}",
+      "handlers": [
+        {
+          "methods": [ "GET" ],
+          "pathPattern": "/ezproxy",
+          "permissionsRequired": []
         }
       ]
     },
