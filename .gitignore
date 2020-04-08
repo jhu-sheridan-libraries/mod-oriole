@@ -40,3 +40,6 @@ src/main/resources
 
 .vagrant
 
+tmp/
+
+.DS_Store

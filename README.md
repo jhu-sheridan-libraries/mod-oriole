@@ -1,8 +1,27 @@
 [![Build Status](https://travis-ci.org/jhu-sheridan-libraries/mod-oriole.svg?branch=master)](https://travis-ci.org/jhu-sheridan-libraries/mod-oriole)
 
+# mod-oriole
+
+Copyright (C) 2019 Johns Hopkins University
+
+This software is distributed under the terms of the Apache License,
+Version 2.0. See the file "[LICENSE](LICENSE)" for more information.
+
+# Goal
+
+FOLIO compatible A-Z Database module.
+
+Provides PostgreSQL based storage to implement an A-Z Database module. Written in Java, using the raml-module-builder and uses Maven as its build system.
+
+# Prerequisites
+
+- Java 8 JDK
+- Maven 3.3.9
+- Postgres 9.6.1 (running and listening on localhost:5432, logged in user must have admin rights)
+
 ## Getting Started
 
-#### Sandbox Setup
+### Sandbox Setup
 Download and Install Intellij
 
 `brew install maven`
@@ -11,7 +30,11 @@ Download and Install Intellij
 
 `brew install jenv`
 
-Manually download corretto8 https://docs.aws.amazon.com/corretto/latest/corretto-8-ug/macos-install.html
+#### Java 8 JDK
+
+You will need a JDK that includes tools.jar since this project uses the AspectJ maven plugin.
+
+You can download Amazon's JDK at  https://docs.aws.amazon.com/corretto/latest/corretto-8-ug/macos-install.html
 
 `jenv add /Library/Java/JavaVirtualMachines/amazon-corretto-8.jdk/Contents/Home/`
 
@@ -33,14 +56,18 @@ Postgres setup
 
 #### IntelliJ Debugger Settings:
 Main class: org.folio.rest.RestLauncher
+
 Project Arguments: run org.folio.rest.RestVerticle db_connection=/Users/amanda/oriole/mod-oriole-archive/postgres-conf.idea.json
+
 Working Dir: /[your path to]/mod-oriole
+
 Use classpath of module: mod-oriole
+
 JDK: Default 1.8
 
 ### Clone from GitHub
 
-To clone the porject from github, make sure you inlucde the submodules:
+Be sure to include submodules since there are some common RAML definitions that are shared between FOLIO projects via Git submodules:
 
 ```bash
 git clone --recurse-submodules -j8 git@github.com:jhu-sheridan-libraries/mod-oriole.git
@@ -49,13 +76,9 @@ git clone --recurse-submodules -j8 git@github.com:jhu-sheridan-libraries/mod-ori
 ### Docker installation 
 * Follow the steps here: https://wiki.library.jhu.edu/display/ULCSS/Docker+-+software+containerization+platform
 
-### Build
+### Building
 
-Note: Some of the tests are not working. So simply ignore the tests when building for now.
-
-```bash 
-mvn clean install -DskipTests 
-```
+run `mvn install` from the root directory.
 
 The above command will compile, test and create a fat-jar file in the `target` directory. 
 
@@ -118,7 +141,7 @@ java -jar target/mod-oriole-fat.jar db_connection=/tmp/postgres-conf.json
 Try the following and you should get a 401 response. 
 
 ```bash 
-curl -D - -w '\n' -H "X-Okapi-Tenant: test"  http://localhost:8081/oriole-resources
+curl -D - -w '\n' -H "X-Okapi-Tenant: test"  http://localhost:8081/oriole-libraries
 ```
 
 The output would be like: 
@@ -146,9 +169,13 @@ First you need to initialize the module. This will create a database table for t
 Future CRUD operations from the same tenant will be based on that database table. 
 
 ```bash 
-curl -D - -w '\n' -H "X-Okapi-Tenant: diku" -H "Content-Type: application/json" \
-  -X POST -d '{"module_to": "mod-oriole-1.0"}' \
-  http://localhost:8081/_/tenant 
+curl -X "POST" "http://localhost:8081/_/tenant" \
+     -H 'X-Okapi-Tenant: diku' \
+     -H 'Content-Type: application/json' \
+     -H 'Accept: application/json' \
+     -d $'{
+  "module_to": "mod-oriole-1.0"
+}'
 ```
 
 The output is like the following: 
@@ -171,181 +198,195 @@ Transfer-Encoding: chunked
 To fetch the resources, use this command: 
 
 ```bash 
-curl -D - -w '\n' -H "X-Okapi-Tenant: diku"  http://localhost:8081/oriole-resources
+curl "http://localhost:8081/oriole/resources" \
+     -H 'X-Okapi-Tenant: diku' \
+     -H 'Accept: application/json'
 ```
 
 The results would be: 
 
 ``` 
 HTTP/1.1 200 OK
-Content-Type: application/json
-host: localhost:8081
-user-agent: curl/7.54.0
-accept: */*
-x-okapi-tenant: diku
 Transfer-Encoding: chunked
+Content-Type: application/json
+x-okapi-tenant: diku
+accept: application/json
+host: localhost:8081
+Connection: close
 
 {
   "resources" : [ ],
-  "totalRecords" : 0
+  "totalRecords" : 0,
+  "resultInfo" : {
+    "totalRecords" : 0,
+    "facets" : [ ],
+    "diagnostics" : [ ]
+  }
 }
 ```
 
 Note that it returns a 200 response, instead of the 500 error earlier in the Getting Started section. This is because 
-the database table has been created for this tenant and this module. There is no records found because we
+the database table has been created for this tenant and this module. There are no records found because we
 haven't post any resources in the database yet. 
 
 ### Create resources (POST)
 
-Create a resource record in JSON: 
+To create a new resource, use this command:
 
 ```bash
-cat > /tmp/mod-oriole-resource-1.json <<END
-{
-  "id": "11111111-1111-1111-a111-111111111111",
+curl -X "POST" "http://localhost:8081/oriole/resources" \
+     -H 'X-Okapi-Tenant: diku' \
+     -H 'Content-Type: application/json' \
+     -H 'Accept: application/json' \
+     -d $'{
+  "id": "c7b8911a-6983-11ea-bc55-0242ac130003",
   "title": "PubMed",
-  "link": "https://www.ncbi.nlm.nih.gov/pubmed/",
-  "description": "PubMed is a free search engine accessing primarily the MEDLINE database of references and abstracts on life sciences and biomedical topics."
-}
-END
-```
-
-To post it to the API, use the following:
-
-```bash
-curl -D - -w '\n' -X POST -H "X-Okapi-Tenant: test" \
-  -H "Content-type: application/json" \
-  -d @/tmp/mod-oriole-resource-1.json \
-  http://localhost:8081/resources
+  "description": "PubMed lists journal articles and more back to 1947. It indexes about 5,400 journals and covers the areas of medicine, nursing, dentistry, veterinary medicine, health care systems, preclinical sciences, and related areas. PubMed also links to online books and to most of the other NCBI databases. PubMed is a free database developed by the National Library of Medicine (NLM) and the National Center for Biotechnology Information (NCBI), both at the National Institutes of Health (NIH) in Bethesda, MD.",
+  "url": "https://www.ncbi.nlm.nih.gov/pubmed/"
+}'
 ```
 
 The response should be a HTTP 201 response: 
 
 ``` 
 HTTP/1.1 201 Created
-Content-Type: application/json
-Location: /resources/11111111-1111-1111-a111-111111111111
-host: localhost:8081
-user-agent: curl/7.54.0
-accept: */*
-x-okapi-tenant: test
-content-length: 276
 Transfer-Encoding: chunked
+Content-Type: application/json
+Location: /oriole/resources/c7b8911a-6983-11ea-bc55-0242ac130003
+x-okapi-tenant: diku
+accept: application/json
+host: localhost:8081
+content-length: 651
+Connection: close
 
 {
-  "id" : "11111111-1111-1111-a111-111111111111",
-  "link" : "https://www.ncbi.nlm.nih.gov/pubmed/",
+  "id" : "c7b8911a-6983-11ea-bc55-0242ac130003",
+  "altId" : "JHU00002",
+  "url" : "https://www.ncbi.nlm.nih.gov/pubmed/",
   "title" : "PubMed",
-  "description" : "PubMed is a free search engine accessing primarily the MEDLINE database of references and abstracts on life sciences and biomedical topics."
+  "description" : "PubMed lists journal articles and more back to 1947. It indexes about 5,400 journals and covers the areas of medicine, nursing, dentistry, veterinary medicine, health care systems, preclinical sciences, and related areas. PubMed also links to online books and to most of the other NCBI databases. PubMed is a free database developed by the National Library of Medicine (NLM) and the National Center for Biotechnology Information (NCBI), both at the National Institutes of Health (NIH) in Bethesda, MD.",
+  "identifier" : [ ],
+  "terms" : [ ],
+  "accessRestrictions" : [ ],
+  "availability" : [ ]
 }
 ```
 
 Try fetch again, and this time there should be one record found. 
 
 ``` 
-$ curl -D - -w '\n' -H "X-Okapi-Tenant: test"  http://localhost:8081/resources
+$ curl -D - -w '\n' -H "X-Okapi-Tenant: diku"  -H "Accept: application/json" http://localhost:8081/oriole/resources
+
 HTTP/1.1 200 OK
-Content-Type: application/json
-host: localhost:8081
-user-agent: curl/7.54.0
-accept: */*
-x-okapi-tenant: test
 Transfer-Encoding: chunked
+Content-Type: application/json
+x-okapi-tenant: diku
+accept: application/json
+host: localhost:8081
+user-agent: Paw/3.1.10 (Macintosh; OS X/10.15.3) GCDHTTPRequest
+Connection: close
 
 {
   "resources" : [ {
-    "resources" : [ ],
-    "link" : "https://www.ncbi.nlm.nih.gov/pubmed/",
-    "description" : "PubMed is a free search engine accessing primarily the MEDLINE database of references and abstracts on life sciences and biomedical topics.",
-    "id" : "11111111-1111-1111-a111-111111111111",
-    "title" : "PubMed"
+    "id" : "c7b8911a-6983-11ea-bc55-0242ac130003",
+    "altId" : "JHU00002",
+    "url" : "https://www.ncbi.nlm.nih.gov/pubmed/",
+    "title" : "PubMed",
+    "description" : "PubMed lists journal articles and more back to 1947. It indexes about 5,400 journals and covers the areas of medicine, nursing, dentistry, veterinary medicine, health care systems, preclinical sciences, and related areas. PubMed also links to online books and to most of the other NCBI databases. PubMed is a free database developed by the National Library of Medicine (NLM) and the National Center for Biotechnology Information (NCBI), both at the National Institutes of Health (NIH) in Bethesda, MD.",
+    "identifier" : [ ],
+    "terms" : [ ],
+    "accessRestrictions" : [ ],
+    "availability" : [ ]
   } ],
-  "totalRecords" : 1
+  "totalRecords" : 1,
+  "resultInfo" : {
+    "totalRecords" : 1,
+    "facets" : [ ],
+    "diagnostics" : [ ]
+  }
 }
 
 ```
 
-### Fetch by ID
+### Fetch Resource by ID
 
-To fetch the record by the ID (which is required to be a UUID), use the following: 
+To fetch the resource by the ID (which is required to be a UUID), use the following: 
 
 ```bash
-curl -D - -w '\n' -H "X-Okapi-Tenant: test" http://localhost:8081/resources/11111111-1111-1111-a111-111111111111
+curl "http://localhost:8081/oriole/resources/c7b8911a-6983-11ea-bc55-0242ac130003" \
+     -H 'X-Okapi-Tenant: diku' \
+     -H 'Accept: application/json'
 ```
 
 The response would be like: 
 
 ``` 
 HTTP/1.1 200 OK
-Content-Type: application/json
-host: localhost:8081
-user-agent: curl/7.54.0
-accept: */*
-x-okapi-tenant: test
 Transfer-Encoding: chunked
+Content-Type: application/json
+x-okapi-tenant: diku
+accept: application/json
+host: localhost:8081
+Connection: close
 
 {
-  "id" : "11111111-1111-1111-a111-111111111111",
-  "link" : "https://www.ncbi.nlm.nih.gov/pubmed/",
+  "id" : "c7b8911a-6983-11ea-bc55-0242ac130003",
+  "altId" : "JHU00002",
+  "url" : "https://www.ncbi.nlm.nih.gov/pubmed/",
   "title" : "PubMed",
-  "description" : "PubMed is a free search engine accessing primarily the MEDLINE database of references and abstracts on life sciences and biomedical topics."
+  "description" : "PubMed lists journal articles and more back to 1947. It indexes about 5,400 journals and covers the areas of medicine, nursing, dentistry, veterinary medicine, health care systems, preclinical sciences, and related areas. PubMed also links to online books and to most of the other NCBI databases. PubMed is a free database developed by the National Library of Medicine (NLM) and the National Center for Biotechnology Information (NCBI), both at the National Institutes of Health (NIH) in Bethesda, MD.",
+  "identifier" : [ ],
+  "terms" : [ ],
+  "keywords" : "c7b8911a-6983-11ea-bc55-0242ac130003 https://www.ncbi.nlm.nih.gov/pubmed/ JHU00002 PubMed PubMed lists journal articles and more back to 1947. It indexes about 5,400 journals and covers the areas of medicine, nursing, dentistry, veterinary medicine, health care systems, preclinical sciences, and related areas. PubMed also links to online books and to most of the other NCBI databases. PubMed is a free database developed by the National Library of Medicine (NLM) and the National Center for Biotechnology Information (NCBI), both at the National Institutes of Health (NIH) in Bethesda, MD.",
+  "accessRestrictions" : [ ],
+  "availability" : [ ]
 }
 ```
 
-### Update record (PUT)
+### Update Resource (PUT)
 
-Create an updated version of the resource record in JSON: 
-
-```bash
-cat > /tmp/mod-oriole-resource-2.json <<END
-{
-  "id": "11111111-1111-1111-a111-111111111111",
-  "title": "PubMed",
-  "link": "https://www.ncbi.nlm.nih.gov/pubmed/",
-  "description": "PubMed lists journal articles and more back to 1947."
-}
-END
-```
-
-Update the record with the file. 
+Update the resource with this command: 
 
 ```bash 
-curl -D - -w '\n' -X PUT \
-  -H "X-Okapi-Tenant: test" \
-  -H "Content-Type: application/json" \
-  -d @/tmp/mod-oriole-resource-2.json \
-  http://localhost:8081/resources/11111111-1111-1111-a111-111111111111
+curl -X "PUT" "http://localhost:8081/oriole/resources/c7b8911a-6983-11ea-bc55-0242ac130003" \
+     -H 'X-Okapi-Tenant: diku' \
+     -H 'Content-Type: application/json' \
+     -H 'Accept: application/json' \
+     -d $'{
+  "id": "c7b8911a-6983-11ea-bc55-0242ac130003",
+  "title": "PubMed",
+  "description": "short description...",
+  "url": "https://www.ncbi.nlm.nih.gov/pubmed/"
+}'
 ```
 
 The response would look like: 
 
 ``` 
 HTTP/1.1 204 No Content
+x-okapi-tenant: diku
+accept: application/json
 host: localhost:8081
-user-agent: curl/7.54.0
-accept: */*
-x-okapi-tenant: test
-content-length: 189
+Connection: close
 ```
 
 
 ### Delete a resource by ID (DELETE)
 
 ```bash
-curl -D - -w '\n' -X DELETE \
-  -H "X-Okapi-Tenant: test" \
-  http://localhost:8081/resources/11111111-1111-1111-a111-111111111111
+curl -X "DELETE" "http://localhost:8081/oriole/resources/c7b8911a-6983-11ea-bc55-0242ac130003" \
+     -H 'X-Okapi-Tenant: diku' \
+     -H 'Accept: application/json'
 ```
 
 It returns a HTTP 204 response
 
 ```
 HTTP/1.1 204 No Content
+x-okapi-tenant: diku
+accept: application/json
 host: localhost:8081
-user-agent: curl/7.54.0
-accept: */*
-x-okapi-tenant: test
-Content-Length: 0 
+Connection: close
 ```
 
 ## Build Docker Image
