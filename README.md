@@ -443,6 +443,21 @@ Add permissions
 python3 scripts/add-permissions.py 
 ```
 
+## Building the MuleSoft's API Console
+
+Install the api-console command line tool using npm:
+
+```
+$ npm i -g api-console-cli
+```
+
+Generate the console for Oriole and EzProxy
+
+```
+$ api-console build -t "RAML 1.0" ./ramls/oriole.raml -o api-console/oriole
+$ api-console build -t "RAML 1.0" ./ramls/ezprozy.raml -o api-console/ezproxy
+```
+
 
 
 

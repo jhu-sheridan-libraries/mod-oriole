@@ -6,15 +6,12 @@ import org.folio.okapi.common.ErrorType;
 import org.folio.okapi.common.ExtendedAsyncResult;
 import org.folio.okapi.common.Failure;
 import org.folio.okapi.common.Success;
-import org.folio.rest.RestVerticle;
 import org.folio.rest.jaxrs.model.Errors;
 import org.folio.rest.jaxrs.model.Library;
 import org.folio.rest.jaxrs.model.LibraryCollection;
 import org.folio.rest.jaxrs.resource.OrioleLibraries;
 import org.folio.rest.persist.Criteria.Criteria;
 import org.folio.rest.persist.Criteria.Criterion;
-import org.folio.rest.persist.Criteria.Limit;
-import org.folio.rest.persist.Criteria.Offset;
 import org.folio.rest.persist.PgExceptionUtil;
 import org.folio.rest.persist.PostgresClient;
 import org.folio.rest.persist.cql.CQLWrapper;
@@ -25,13 +22,9 @@ import org.folio.rest.tools.utils.TenantTool;
 import org.folio.rest.tools.utils.ValidationHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.z3950.zing.cql.cql2pgjson.CQL2PgJSON;
-import org.z3950.zing.cql.cql2pgjson.FieldException;
-import org.z3950.zing.cql.cql2pgjson.SchemaException;
-
 import javax.ws.rs.core.Response;
-import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -56,7 +49,8 @@ public class LibrariesImpl implements OrioleLibraries {
         String path = LIBRARY_SCHEMA_NAME;
         try {
             InputStream is = getClass().getClassLoader().getResourceAsStream(path);
-            LIBRARY_SCHEMA = IOUtils.toString(is, "UTF-8");
+            assert is != null;
+            LIBRARY_SCHEMA = IOUtils.toString(is, StandardCharsets.UTF_8);
         } catch (Exception e) {
             LOGGER.error("Unable to load schema - " + path
                     + ", validation of query fields will not be active");
@@ -112,8 +106,8 @@ public class LibrariesImpl implements OrioleLibraries {
         vertxContext.runOnContext(v ->
                 postgresClient.save(LIBRARY_TABLE, id, entity, reply -> {
                     if (reply.succeeded()) {
-                        Object ret = reply.result();
-                        entity.setId((String) ret);
+                        String ret = reply.result();
+                        entity.setId(ret);
                         OutStream stream = new OutStream();
                         stream.setData(entity);
                         PostOrioleLibrariesResponse.HeadersFor201 headers =
@@ -292,7 +286,7 @@ public class LibrariesImpl implements OrioleLibraries {
         ApiUtil.getPostgresClient(okapiHeaders, context).get(LIBRARY_TABLE, Library.class, c, true,
                 reply -> {
                     if (reply.succeeded()) {
-                        List<Library> Libraries = (List<Library>)reply.result().getResults();
+                        List<Library> Libraries = reply.result().getResults();
                         if (Libraries.isEmpty()) {
                             resp.handle(new Failure<>(
                                     ErrorType.NOT_FOUND, "Library " + libraryId + " not found"));

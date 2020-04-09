@@ -31,7 +31,6 @@ import static org.hamcrest.Matchers.is;
 @RunWith(VertxUnitRunner.class)
 public class EZProxyImplTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(SubjectsImplTest.class);
-    private static final String LS = System.lineSeparator();
     private static Vertx vertx;
     private static Async async;
     private static String moduleId;
@@ -41,12 +40,45 @@ public class EZProxyImplTest {
     private final Header CONTENT_TYPE_HEADER = new Header("Content-Type", "application/json");
     private final Header ACCEPT_HEADER = new Header("Accept", "application/json");
 
-    private final String resource = "{"
-            + "\"id\" : \"11111111-1111-1111-a111-111111111111\"," + LS
-            + "\"title\" : \"PubMed\"," + LS
-            + "\"url\" : \"https://www.ncbi.nlm.nih.gov/pubmed/\"," + LS
-            + "\"description\" : \"PubMed is a free search engine accessing primarily the MEDLINE database of references and abstracts on life sciences and biomedical topics.\"}" + LS;
+    private final String sage1 = " {\n" +
+            "    \"id\" : \"fef6d613-9d8a-41c5-873d-b6ad000dcafe\",\n" +
+            "    \"altId\" : \"JHU03917\",\n" +
+            "    \"url\" : \"https://journals.sagepub.com/\",\n" +
+            "    \"title\" : \"SAGE Journals Online\",\n" +
+            "    \"altTitle\" : \"\",\n" +
+            "    \"publisher\" : \"SAGE Publications\",\n" +
+            "    \"creator\" : \"SAGE Publications\",\n" +
+            "    \"provider\" : \"SAGE Publications\",\n" +
+            "    \"description\" : \"The SAGE Subject Collections are discipline-specific packages of the most popular peer-reviewed journals in Communication & Media Studies, Criminology, Education, Management & Organization Studies, Materials Science & Engineering, Nursing & Public Health, Political Science, Psychology, Sociology, and Urban Studies & Planning published by SAGE and participating societies.\",\n" +
+            "    \"proxy\" : true,\n" +
+            "    \"identifier\" : [ ],\n" +
+            "    \"terms\" : [ ],\n" +
+            "    \"accessRestrictions\" : [ ],\n" +
+            "    \"availability\" : [ ],\n" +
+            "    \"tags\" : {\n" +
+            "      \"tagList\" : [ \"Biomedical Sciences -- Core Databases\", \"Communication + Journalism -- Core Databases\" ]\n" +
+            "    }\n" +
+            "  }";
 
+    private final String sage2 = "{\n" +
+            "    \"id\" : \"1f30d141-30de-4c04-b4a4-e07b4d358aef\",\n" +
+            "    \"altId\" : \"JHU07025\",\n" +
+            "    \"url\" : \"http://sk.sagepub.com/cases\",\n" +
+            "    \"title\" : \"SAGE Business Cases\",\n" +
+            "    \"altTitle\" : \"\",\n" +
+            "    \"publisher\" : \"Sage Publications\",\n" +
+            "    \"creator\" : \"\",\n" +
+            "    \"provider\" : \"Sage Publications\",\n" +
+            "    \"description\" : \"This global collection of 1,000 proprietary and commissioned business cases from Sage is intended to elicit discussion and inspire researchers to develop their own best practices and prepare for professional success.  Many of these contemporary and newsworthy cases include teaching notes and discussion questions to facilitate classroom use.  Formats range from short vignettes to narrative long form. Cases were written based on field research and publicly available sources.  Click <a href=\\\"http://sk.sagepub.com/business-cases-partners\\\">here</a> to learn more about the contributors.\",\n" +
+            "    \"proxy\" : true,\n" +
+            "    \"identifier\" : [ ],\n" +
+            "    \"terms\" : [ ],\n" +
+            "    \"accessRestrictions\" : [ ],\n" +
+            "    \"availability\" : [ ],\n" +
+            "    \"tags\" : {\n" +
+            "      \"tagList\" : [ \"Business -- Cases\", \"My Saved Databases -- Databases\" ]\n" +
+            "    }\n" +
+            "  }";
     @Before
     public void setUp(TestContext context) throws Exception {
         Locale.setDefault(Locale.US);
@@ -90,6 +122,7 @@ public class EZProxyImplTest {
 
     @Test
     public void canCreateResourceAndGetEZProxyStanzas() {
+
         // drop tenant if it exists
         given().header(TENANT_HEADER)
                 .header(CONTENT_TYPE_HEADER)
@@ -114,7 +147,7 @@ public class EZProxyImplTest {
         given().header(TENANT_HEADER)
                 .header(CONTENT_TYPE_HEADER)
                 .header(ACCEPT_HEADER)
-                .body(resource)
+                .body(sage1)
                 .post("/oriole/resources")
                 .then()
                 .log()
@@ -132,16 +165,16 @@ public class EZProxyImplTest {
         // get ezproxy stanzas
         given().header(TENANT_HEADER)
                 .header(new Header("Accept", "text/plain"))
-                .get("/oriole/ezproxy")
+                .get("/ezproxy")
                 .then()
                 .log()
                 .ifValidationFails()
                 .statusCode(200)
-                .body(containsString("Title PubMed"))
-                .body(containsString("# Complete list of IDs for included databases:"))
-                .body(containsString("URL: https://ncbi.nlm.nih.gov"))
-                .body(containsString("DJ: ncbi.nlm.nih.gov"))
-                .body(containsString("DJ: ncbi.nlm.nih.gov"));
+                .body(containsString("Title SAGE Journals Online (JHU03917)"))
+                .body(containsString("# Complete list of IDs for included databases: JHU03917"))
+                .body(containsString("URL https://journals.sagepub.com"))
+                .body(containsString("DJ sagepub.com"))
+                .body(containsString("HJ journals.sagepub.com"));
     }
 
     @Test
@@ -171,7 +204,7 @@ public class EZProxyImplTest {
         given().header(TENANT_HEADER)
                 .header(CONTENT_TYPE_HEADER)
                 .header(ACCEPT_HEADER)
-                .body(resource)
+                .body(sage1)
                 .post("/oriole/resources")
                 .then()
                 .log()
@@ -189,7 +222,7 @@ public class EZProxyImplTest {
         // get ezproxy stanzas
         given().header(TENANT_HEADER)
                 .header(ACCEPT_HEADER)
-                .get("/oriole/ezproxy")
+                .get("/ezproxy")
                 .then()
                 .log()
                 .ifValidationFails()
@@ -220,58 +253,16 @@ public class EZProxyImplTest {
                 .statusCode(201);
         // get ezproxy stanzas
         given().header(TENANT_HEADER)
-                .get("/oriole/ezproxy")
+                .get("/ezproxy")
                 .then()
                 .log()
                 .ifValidationFails()
                 .statusCode(200)
-                .body(containsString(""));;
+                .body(containsString(""));
     }
 
     @Test
     public void canCreateResourcesWithSharedSubdomainAndGetEZProxyStanzas() {
-
-
-        String sage1 = " {\n" +
-                "    \"id\" : \"fef6d613-9d8a-41c5-873d-b6ad000dcafe\",\n" +
-                "    \"altId\" : \"JHU03917\",\n" +
-                "    \"url\" : \"https://journals.sagepub.com/\",\n" +
-                "    \"title\" : \"SAGE Journals Online\",\n" +
-                "    \"altTitle\" : \"\",\n" +
-                "    \"publisher\" : \"SAGE Publications\",\n" +
-                "    \"creator\" : \"SAGE Publications\",\n" +
-                "    \"provider\" : \"SAGE Publications\",\n" +
-                "    \"description\" : \"The SAGE Subject Collections are discipline-specific packages of the most popular peer-reviewed journals in Communication & Media Studies, Criminology, Education, Management & Organization Studies, Materials Science & Engineering, Nursing & Public Health, Political Science, Psychology, Sociology, and Urban Studies & Planning published by SAGE and participating societies.\",\n" +
-                "    \"proxy\" : true,\n" +
-                "    \"identifier\" : [ ],\n" +
-                "    \"terms\" : [ ],\n" +
-                "    \"accessRestrictions\" : [ ],\n" +
-                "    \"availability\" : [ ],\n" +
-                "    \"tags\" : {\n" +
-                "      \"tagList\" : [ \"Biomedical Sciences -- Core Databases\", \"Communication + Journalism -- Core Databases\" ]\n" +
-                "    }\n" +
-                "  }";
-
-        String sage2 = "{\n" +
-                "    \"id\" : \"1f30d141-30de-4c04-b4a4-e07b4d358aef\",\n" +
-                "    \"altId\" : \"JHU07025\",\n" +
-                "    \"url\" : \"http://sk.sagepub.com/cases\",\n" +
-                "    \"title\" : \"SAGE Business Cases\",\n" +
-                "    \"altTitle\" : \"\",\n" +
-                "    \"publisher\" : \"Sage Publications\",\n" +
-                "    \"creator\" : \"\",\n" +
-                "    \"provider\" : \"Sage Publications\",\n" +
-                "    \"description\" : \"This global collection of 1,000 proprietary and commissioned business cases from Sage is intended to elicit discussion and inspire researchers to develop their own best practices and prepare for professional success.  Many of these contemporary and newsworthy cases include teaching notes and discussion questions to facilitate classroom use.  Formats range from short vignettes to narrative long form. Cases were written based on field research and publicly available sources.  Click <a href=\\\"http://sk.sagepub.com/business-cases-partners\\\">here</a> to learn more about the contributors.\",\n" +
-                "    \"proxy\" : true,\n" +
-                "    \"identifier\" : [ ],\n" +
-                "    \"terms\" : [ ],\n" +
-                "    \"accessRestrictions\" : [ ],\n" +
-                "    \"availability\" : [ ],\n" +
-                "    \"tags\" : {\n" +
-                "      \"tagList\" : [ \"Business -- Cases\", \"My Saved Databases -- Databases\" ]\n" +
-                "    }\n" +
-                "  }";
-
 
         // drop tenant if it exists
         given().header(TENANT_HEADER)
@@ -325,16 +316,15 @@ public class EZProxyImplTest {
         // get ezproxy stanzas
         given().header(TENANT_HEADER)
                 .header(new Header("Accept", "text/plain"))
-                .get("/oriole/ezproxy")
+                .get("/ezproxy")
                 .then()
                 .log()
                 .ifValidationFails()
                 .statusCode(200)
                 .body(containsString("Title SAGE Journals Online (JHU03917)"))
                 .body(containsString("# Complete list of IDs for included databases: JHU03917 JHU07025"))
-                .body(containsString("URL: https://sagepub.com"))
-                .body(containsString("DJ: sagepub.com"))
-                .body(containsString("HJ: journals.sagepub.com"))
-                .body(containsString("HJ: sk.sagepub.com"));
+                .body(containsString("DJ sagepub.com"))
+                .body(containsString("HJ journals.sagepub.com"))
+                .body(containsString("HJ sk.sagepub.com"));
     }
 }
