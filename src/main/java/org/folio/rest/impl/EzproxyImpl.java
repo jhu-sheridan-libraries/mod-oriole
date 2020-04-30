@@ -210,7 +210,7 @@ public class EzproxyImpl implements Ezproxy {
 
       }
       stanza.setDomain(domain);
-      stanza.setBaseURL(protocol+"://"+aURL.getHost());
+      stanza.setBaseURL(url);
     } catch (Exception e) {
       e.printStackTrace();
     }
