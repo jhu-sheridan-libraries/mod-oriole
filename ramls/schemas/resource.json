@@ -25,14 +25,6 @@
       "type": "string",
       "description": "alternative titles for the resource. They can be used to add a commonly misspelled title"
     },
-    "publisher": {
-      "type": "string",
-      "description": "name of publisher of the resource"
-    },
-    "creator": {
-      "type": "string",
-      "description": "name of the creator of the resource"
-    },
     "provider": {
       "type": "string",
       "description": "name of the provider of the resource"
