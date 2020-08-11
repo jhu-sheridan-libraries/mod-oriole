@@ -145,7 +145,7 @@ public class OrioleImpl implements Oriole {
     String id = entity.getId();
     vertxContext.runOnContext(
         v ->
-            getPostgresClient(okapiHeaders, vertxContext).save(
+                ApiUtil.getPostgresClient(okapiHeaders, vertxContext).save(
                 RESOURCE_TABLE,
                 id,
                 entity,
@@ -241,7 +241,7 @@ public class OrioleImpl implements Oriole {
       Context vertxContext) {
     getOneResource(resourceId, okapiHeaders, vertxContext, res -> {
       if (res.succeeded()) {
-        getPostgresClient(okapiHeaders, vertxContext).delete(RESOURCE_TABLE, resourceId,
+        ApiUtil.getPostgresClient(okapiHeaders, vertxContext).delete(RESOURCE_TABLE, resourceId,
             reply -> {
               if (reply.succeeded()) {
                 if (reply.result().getUpdated() == 1) {
@@ -306,7 +306,7 @@ public class OrioleImpl implements Oriole {
     getOneResource(resourceId, okapiHeaders, vertxContext, res -> {
       if (res.succeeded()) {
         Resource oldRes = res.result();
-        getPostgresClient(okapiHeaders, vertxContext).update(RESOURCE_TABLE, entity, resourceId,
+        ApiUtil.getPostgresClient(okapiHeaders, vertxContext).update(RESOURCE_TABLE, entity, resourceId,
             reply -> {
               if (reply.succeeded()) {
                 if (reply.result().getUpdated() == 0) {
@@ -346,6 +346,7 @@ public class OrioleImpl implements Oriole {
     vertxContext.runOnContext(v -> {  // TODO: Is this necessary?
       PostgresClient client = ApiUtil.getPostgresClient(okapiHeaders, vertxContext);
       String sql = "SELECT tag FROM " + TAG_VIEW + " ORDER BY tag";
+
       client.select(sql, (reply) -> {
         if (reply.succeeded()) {
           TagCollection tagCollection = new TagCollectionImpl();
@@ -611,7 +612,7 @@ public class OrioleImpl implements Oriole {
       Handler<ExtendedAsyncResult<Resource>> resp) {
     Criterion c = new Criterion(
         new Criteria().addField(ID_FIELD_NAME).setJSONB(false).setOperation("=").setValue("'" + resourceId + "'"));
-    getPostgresClient(okapiHeaders, context).get(RESOURCE_TABLE, Resource.class, c, true,
+    ApiUtil.getPostgresClient(okapiHeaders, context).get(RESOURCE_TABLE, Resource.class, c, true,
         reply -> {
           if (reply.succeeded()) {
             List<Resource> resources = (List<Resource>) reply.result().getResults();
@@ -637,7 +638,7 @@ public class OrioleImpl implements Oriole {
   private void getLastAltId(Map<String, String> okapiHeaders, Context context,
                             Handler<ExtendedAsyncResult<String>> resp) {
     String sql = "SELECT jsonb->>'altId' altId FROM " + RESOURCE_TABLE + " ORDER BY altId DESC LIMIT 1;";
-    getPostgresClient(okapiHeaders, context).select(
+    ApiUtil.getPostgresClient(okapiHeaders, context).select(
         sql,
         (reply) -> {
           if (reply.succeeded()) {
@@ -658,12 +659,6 @@ public class OrioleImpl implements Oriole {
             }
           }
         });
-  }
-
-
-  private static PostgresClient getPostgresClient(Map<String, String> okapiHeaders, Context vertxContext) {
-    String tenantId = TenantTool.calculateTenantId(okapiHeaders.get(RestVerticle.OKAPI_HEADER_TENANT));
-    return PostgresClient.getInstance(vertxContext.owner(), tenantId);
   }
 
   protected String getNextAltId(String lastAltId) {

@@ -10,11 +10,15 @@ import org.folio.rest.tools.utils.TenantTool;
 import org.z3950.zing.cql.cql2pgjson.CQL2PgJSON;
 import org.z3950.zing.cql.cql2pgjson.FieldException;
 import org.z3950.zing.cql.cql2pgjson.SchemaException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Map;
 
 public class ApiUtil {
+    private static final Logger LOGGER = LoggerFactory.getLogger(OrioleImpl.class);
+
     public static CQLWrapper getCQL(String query, int limit, int offset, String table, String schema)
             throws IOException, FieldException, SchemaException {
         CQL2PgJSON cql2pgJson;
@@ -31,7 +35,23 @@ public class ApiUtil {
 
 
     public static PostgresClient getPostgresClient(Map<String, String> okapiHeaders, Context vertxContext) {
-        String tenantId = TenantTool.calculateTenantId(okapiHeaders.get(RestVerticle.OKAPI_HEADER_TENANT));
-        return PostgresClient.getInstance(vertxContext.owner(), tenantId);
+        try {
+            String tenantId = TenantTool.calculateTenantId(okapiHeaders.get(RestVerticle.OKAPI_HEADER_TENANT));
+            return PostgresClient.getInstance(vertxContext.owner(), tenantId);
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
+            e.printStackTrace();
+            return null;
+        } catch (OutOfMemoryError e) {
+            LOGGER.error(e.getMessage());
+            closePostgresClients();
+            return null;
+        }
+    }
+
+    public static void closePostgresClients() {
+        //close all clients and run the garbage collector
+        PostgresClient.closeAllClients();
+        System.gc();
     }
 }

@@ -13,6 +13,8 @@
 set -e
 
 if [ -n "$JAVA_OPTS" ]; then
+   echo 'starting with JAVA_OPTS'
+   echo $JAVA_OPTS
    exec java "$JAVA_OPTS" -jar ${VERTICLE_HOME}/module.jar "$@"
 else
    exec java -jar ${VERTICLE_HOME}/module.jar "$@"

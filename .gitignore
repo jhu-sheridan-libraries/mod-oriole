@@ -43,3 +43,5 @@ src/main/resources
 tmp/
 
 .DS_Store
+
+postgres-conf.*
