@@ -21,6 +21,7 @@ import org.folio.rest.persist.PostgresClient;
 import org.folio.rest.persist.cql.CQLWrapper;
 import org.folio.rest.persist.facets.FacetField;
 import org.folio.rest.persist.facets.FacetManager;
+import org.folio.rest.persist.interfaces.Results;
 import org.folio.rest.tools.messages.MessageConsts;
 import org.folio.rest.tools.messages.Messages;
 import org.folio.rest.tools.utils.OutStream;
@@ -29,6 +30,9 @@ import org.folio.rest.tools.utils.ValidationHelper;
 import org.json.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.z3950.zing.cql.cql2pgjson.CQL2PgJSON;
+import org.z3950.zing.cql.cql2pgjson.FieldException;
+import org.z3950.zing.cql.cql2pgjson.QueryValidationException;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -689,48 +693,75 @@ public class OrioleImpl implements Oriole {
       boolean showPrivate) {
     CQLWrapper cql = wrapCql(query, offset, limit, asyncResultHandler, vertxContext);
     PostgresClient postgresClient = ApiUtil.getPostgresClient(okapiHeaders, vertxContext);
-    List<FacetField> facetList = FacetManager.convertFacetStrings2FacetFields(facets, "jsonb");
-    postgresClient.get(RESOURCE_TABLE, Resource.class, new String[]{"*"}, cql, true, false, facetList,
-        reply -> {
-          if (reply.succeeded()) {
-            ResourceCollection resources = new ResourceCollection();
-            List<Resource> resourceList = reply.result().getResults();
-            while (resourceList.remove(null)) ;
-            // There's a weird bug (possibly) in folio. When there is a URL
-            // param for "facets", it returns "Facet" objects
-            // in the resourceList. The following code doesn't resolve it. They're
-            // just left here for future reference.
-            // For example: /oriole/resources?facets=tags.tagList[]
-            Iterator<Resource> it = resourceList.iterator();
-            while (it.hasNext()) {
-              Object o = it.next();
-              if (o instanceof Facet) {
-                resourceList.remove(o);
-              } else {
-                ((Resource) o).setKeywords(null);
-                Resource r = (Resource) o;
-                if (!showPrivate) {
-                  r.setAccessRestrictions(
-                      r.getAccessRestrictions().stream()
+    String sql = "";
+
+    if (query.contains("tags.tagList")) {
+      //String[] queryTemp = query.split("=");
+      query = query.substring(query.indexOf("=")+1, query.length());
+      sql = "WHERE lower(f_unaccent(resource.jsonb->'tags'->>'tagList')) like lower(f_unaccent('%\\\"" + query + " --%')) LIMIT 1000 OFFSET 0;";
+      postgresClient.get(RESOURCE_TABLE, Resource.class, new String[]{"*"}, sql, true, false,
+              reply -> {
+                if (reply.succeeded()) {
+                  processResponse(reply,asyncResultHandler,showPrivate);
+                } else {
+                  ValidationHelper.handleError(reply.cause(), asyncResultHandler);
+                }
+              });
+    }
+    else {
+      List<FacetField> facetList = FacetManager.convertFacetStrings2FacetFields(facets, "jsonb");
+      postgresClient.get(RESOURCE_TABLE, Resource.class, new String[]{"*"}, cql, true, false, facetList,
+              (AsyncResult<Results<Resource>> reply) -> {
+                if (reply.succeeded()) {
+                  processResponse(reply,asyncResultHandler,showPrivate);
+                } else {
+                  ValidationHelper.handleError(reply.cause(), asyncResultHandler);
+                }
+              });
+    }
+  }
+
+  private void processResponse(
+          AsyncResult<Results<Resource>> reply,
+          Handler<AsyncResult<Response>> asyncResultHandler,
+          boolean showPrivate) {
+    ResourceCollection resources = new ResourceCollection();
+    List<Resource> resourceList = reply.result().getResults();
+    while (resourceList.remove(null)) ;
+    // There's a weird bug (possibly) in folio. When there is a URL
+    // param for "facets", it returns "Facet" objects
+    // in the resourceList. The following code doesn't resolve it. They're
+    // just left here for future reference.
+    // For example: /oriole/resources?facets=tags.tagList[]
+    Iterator<Resource> it = resourceList.iterator();
+    while (it.hasNext()) {
+      Object o = it.next();
+      if (o instanceof Facet) {
+        resourceList.remove(o);
+      } else {
+        ((Resource) o).setKeywords(null);
+        Resource r = (Resource) o;
+        if (!showPrivate) {
+          r.setAccessRestrictions(
+                  r.getAccessRestrictions().stream()
                           .filter(ar -> !ar.getPrivate())
                           .collect(Collectors.toList()));
-                }
-              }
-            }
+        }
+      }
+    }
 
-            // Hide passwords unless it's from a logged in user
+    // Hide passwords unless it's from a logged in user
 
-            resources.setResources(resourceList);
-            Integer total = reply.result().getResultInfo().getTotalRecords();
-            resources.setTotalRecords(total);
-            resources.setResultInfo(reply.result().getResultInfo());
-            asyncResultHandler.handle(
-                Future.succeededFuture(
+    resources.setResources(resourceList);
+    Integer total = reply.result().getResultInfo().getTotalRecords();
+    resources.setTotalRecords(total);
+    resources.setResultInfo(reply.result().getResultInfo());
+    asyncResultHandler.handle(
+            Future.succeededFuture(
                     GetOrioleResourcesResponse.respond200WithApplicationJson(
-                        resources)));
-          } else {
-            ValidationHelper.handleError(reply.cause(), asyncResultHandler);
-          }
-        });
+                            resources)));
+
   }
 }
+
+
