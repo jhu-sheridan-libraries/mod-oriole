@@ -36,7 +36,7 @@
     <repository>
       <id>indexdata-maven</id>
       <name>IndexData Maven repository</name>
-      <url>http://maven.indexdata.com/</url>
+      <url>https://maven.indexdata.com/</url>
     </repository>
   </repositories>
 
