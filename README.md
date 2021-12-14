@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/jhu-sheridan-libraries/mod-oriole.svg?branch=master)](https://travis-ci.org/jhu-sheridan-libraries/mod-oriole)
+[![Build Status](https://github.com/jhu-sheridan-libraries/mod-oriole/actions/workflows/maven.yml/badge.svg)](https://github.com/jhu-sheridan-libraries/mod-oriole/actions/workflows/maven.yml)
 
 # mod-oriole
 
